@@ -1,100 +1,78 @@
 package rutas;
+
 import java.util.*;
 
-class Grafo {
-    private Map<String, Map<String, Integer>> nodos;
+public class Grafos {
+    private final Map<String, List<Arista>> adjList = new HashMap<>();
 
-    public Grafo() {
-        this.nodos = new HashMap<>();
+    public Grafos() {
+        inicializarGrafo();
     }
 
-    public void agregarEdificio(String nombre) {
-        nodos.putIfAbsent(nombre, new HashMap<>());
+    private void inicializarGrafo() {
+        addEdge("A", "B", 4);
+        addEdge("A", "C", 8);
+        addEdge("B", "D", 5);
+        addEdge("B", "E", 10);
+        addEdge("C", "F", 7);
+        addEdge("D", "G", 6);
+        addEdge("E", "H", 3);
+        addEdge("F", "I", 9);
+        addEdge("G", "J", 4);
+        addEdge("H", "K", 2);
+        addEdge("I", "L", 5);
+        addEdge("J", "M", 7);
+        addEdge("K", "M", 6);
+        addEdge("L", "M", 8);
+        addEdge("C", "D", 3);
+        addEdge("E", "F", 4);
+        addEdge("H", "I", 6);
+        addEdge("J", "K", 2);
     }
 
-    public void agregarCamino(String origen, String destino, int distancia) {
-        if (nodos.containsKey(origen) && nodos.containsKey(destino)) {
-            nodos.get(origen).put(destino, distancia);
-            nodos.get(destino).put(origen, distancia);
-        }
+    public void addEdge(String edificio1, String edificio2, int distancia) {
+        adjList.putIfAbsent(edificio1, new ArrayList<>());
+        adjList.putIfAbsent(edificio2, new ArrayList<>());
+        adjList.get(edificio1).add(new Arista(edificio2, distancia));
+        adjList.get(edificio2).add(new Arista(edificio1, distancia));
     }
 
-    public Set<String> obtenerEdificios() {
-        return nodos.keySet();
-    }
-
-    public List<String> dijkstra(String inicio, String fin) {
-        if (!nodos.containsKey(inicio) || !nodos.containsKey(fin)) {
-            System.out.println("Uno o ambos nodos no existen en el grafo.");
-            return Collections.emptyList();
-        }
-
-        PriorityQueue<Arista> cola = new PriorityQueue<>(Comparator.comparingInt(a -> a.distancia));
+    public List<String> dijkstra(String inicio, String destino) {
         Map<String, Integer> distancias = new HashMap<>();
-        Map<String, String> padres = new HashMap<>();
-        List<String> ruta = new ArrayList<>();
-        Set<String> visitados = new HashSet<>();
+        Map<String, String> previos = new HashMap<>();
+        PriorityQueue<Arista> pq = new PriorityQueue<>(Comparator.comparingInt(Arista::getDistancia));
 
-        for (String nodo : nodos.keySet()) {
+        for (String nodo : adjList.keySet()) {
             distancias.put(nodo, Integer.MAX_VALUE);
         }
         distancias.put(inicio, 0);
-        cola.add(new Arista(inicio, 0));
+        pq.add(new Arista(inicio, 0));
 
-        while (!cola.isEmpty()) {
-            Arista actual = cola.poll();
+        while (!pq.isEmpty()) {
+            Arista actual = pq.poll();
+            String nodo = actual.getDestino();
+            int distancia = actual.getDistancia();
 
-            if (visitados.contains(actual.nombre)) {
-                continue;
-            }
-            visitados.add(actual.nombre);
+            if (distancia > distancias.getOrDefault(nodo, Integer.MAX_VALUE)) continue;
 
-            if (actual.nombre.equals(fin)) {
-                String nodo = fin;
-                while (nodo != null) {
-                    ruta.add(0, nodo);
-                    nodo = padres.get(nodo);
-                }
-                return ruta;
-            }
-
-            for (Map.Entry<String, Integer> vecino : nodos.get(actual.nombre).entrySet()) {
-                int nuevaDistancia = distancias.get(actual.nombre) + vecino.getValue();
-                if (nuevaDistancia < distancias.get(vecino.getKey())) {
-                    distancias.put(vecino.getKey(), nuevaDistancia);
-                    padres.put(vecino.getKey(), actual.nombre);
-                    cola.add(new Arista(vecino.getKey(), nuevaDistancia));
+            for (Arista arista : adjList.get(nodo)) {
+                int nuevaDist = distancia + arista.getDistancia();
+                if (nuevaDist < distancias.getOrDefault(arista.getDestino(), Integer.MAX_VALUE)) {
+                    distancias.put(arista.getDestino(), nuevaDist);
+                    previos.put(arista.getDestino(), nodo);
+                    pq.add(new Arista(arista.getDestino(), nuevaDist));
                 }
             }
         }
-        return ruta;
-    }
 
-    private static class Arista {
-        String nombre;
-        int distancia;
-
-        Arista(String nombre, int distancia) {
-            this.nombre = nombre;
-            this.distancia = distancia;
+        List<String> ruta = new ArrayList<>();
+        for (String at = destino; at != null; at = previos.get(at)) {
+            ruta.add(at);
         }
+        Collections.reverse(ruta);
+        return ruta.isEmpty() || !ruta.get(0).equals(inicio) ? Collections.emptyList() : ruta;
     }
 
-    public static void main(String[] args) {
-        Grafo grafo = new Grafo();
-
-        grafo.agregarEdificio("A");
-        grafo.agregarEdificio("B");
-        grafo.agregarEdificio("C");
-        grafo.agregarEdificio("D");
-
-        grafo.agregarCamino("A", "B", 1);
-        grafo.agregarCamino("A", "C", 4);
-        grafo.agregarCamino("B", "C", 2);
-        grafo.agregarCamino("B", "D", 5);
-        grafo.agregarCamino("C", "D", 1);
-
-        List<String> ruta = grafo.dijkstra("A", "D");
-        System.out.println("Ruta más corta de A a D: " + ruta);
+    void addArista(String a, String b, int i) {
     }
 }
