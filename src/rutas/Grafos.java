@@ -32,15 +32,15 @@ public class Grafos {
     private void inicializarGrafo() {
         conectar("A", "B", 10);
         conectar("B", "C", 10);
-        conectar("B", "CAFETERIA", 15); // Conexión entre B y CAFETERIA
-        conectar("CAFETERIA", "C", 10); // Conexión entre CAFETERIA y C
+        conectar("B", "CAFETERIA", 15); 
+        conectar("CAFETERIA", "C", 10); 
         conectar("CAFETERIA", "D", 30); 
         conectar("C", "PORTERIA", 30);
         conectar("PORTERIA", "J", 30);
         conectar("J", "D", 40);
         conectar("D", "E", 40);
         conectar("D", "G", 25);
-        conectar("D", "K", 15); // Conexión entre D y K
+        conectar("D", "K", 15); 
         conectar("E", "F", 10);
         conectar("E", "I", 60);
         conectar("F", "G", 2);
@@ -51,14 +51,14 @@ public class Grafos {
         conectar("I", "K", 2);
         conectar("I", "L", 3);
         conectar("J", "G", 1);  
-        conectar("C", "J", 15); // Conexión entre C y J
+        conectar("C", "J", 15); 
     }
 
     private void conectar(String a, String b, int d) {
         adjList.putIfAbsent(a, new ArrayList<>());
         adjList.putIfAbsent(b, new ArrayList<>());
         adjList.get(a).add(new Arista(a, b, d));
-        adjList.get(b).add(new Arista(b, a, d)); // Conexión bidireccional
+        adjList.get(b).add(new Arista(b, a, d)); 
         aristas.add(new Arista(a, b, d));
     }
 

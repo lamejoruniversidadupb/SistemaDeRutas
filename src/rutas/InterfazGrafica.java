@@ -93,7 +93,7 @@ public class InterfazGrafica extends JFrame {
                     g2.drawLine((int)(n1.getX() * scaleX), (int)(n1.getY() * scaleY), (int)(n2.getX() * scaleX), (int)(n2.getY() * scaleY));
             }
 
-            // Verifica si hay una ruta y dibuja la línea roja
+         
             if (rutaActual != null && rutaActual.size() > 1) {
                 g2.setColor(Color.RED);
                 g2.setStroke(new BasicStroke(3));
@@ -105,7 +105,7 @@ public class InterfazGrafica extends JFrame {
                 }
             }
 
-            // Dibujar los nodos (circulares y rectangulares para ciertos nodos)
+            
             for (Nodo nodo : grafo.getNodos()) {
                 if (nodo.getNombre().equals("CAFETERIA") || nodo.getNombre().equals("PORTERIA")) {
                     g2.setColor(Color.GRAY);
