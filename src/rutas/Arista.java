@@ -1,6 +1,6 @@
 package rutas;
 
-public class Arista implements Comparable<Arista> {
+public class Arista {
     private final String origen;
     private final String destino;
     private final int distancia;
@@ -21,11 +21,6 @@ public class Arista implements Comparable<Arista> {
 
     public int getDistancia() {
         return distancia;
-    }
-
-    @Override
-    public int compareTo(Arista otraArista) {
-        return Integer.compare(this.distancia, otraArista.distancia);
     }
 
     @Override

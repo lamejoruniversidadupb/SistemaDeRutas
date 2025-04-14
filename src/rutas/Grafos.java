@@ -40,7 +40,7 @@ public class Grafos {
         conectar("J", "D", 40);
         conectar("D", "E", 40);
         conectar("D", "G", 25);
-        conectar("D", "K", 15); 
+        conectar("D", "K", 15); // Conexión entre D y K
         conectar("E", "F", 10);
         conectar("E", "I", 60);
         conectar("F", "G", 2);
@@ -51,51 +51,56 @@ public class Grafos {
         conectar("I", "K", 2);
         conectar("I", "L", 3);
         conectar("J", "G", 1);  
-        conectar("C", "J", 15); 
+        conectar("C", "J", 15); // Conexión entre C y J
     }
 
     private void conectar(String a, String b, int d) {
         adjList.putIfAbsent(a, new ArrayList<>());
         adjList.putIfAbsent(b, new ArrayList<>());
-        adjList.get(a).add(new Arista(b, b, d));
-        adjList.get(b).add(new Arista(a, b, d));
+        adjList.get(a).add(new Arista(a, b, d));
+        adjList.get(b).add(new Arista(b, a, d)); // Conexión bidireccional
         aristas.add(new Arista(a, b, d));
     }
 
     public List<String> dijkstra(String inicio, String destino) {
         Map<String, Integer> distancias = new HashMap<>();
         Map<String, String> previos = new HashMap<>();
-        PriorityQueue<Arista> pq = new PriorityQueue<>(Comparator.comparingInt(Arista::getDistancia));
-
+        
+        // Inicializamos las distancias a infinito
         for (String nodo : adjList.keySet()) {
             distancias.put(nodo, Integer.MAX_VALUE);
         }
         distancias.put(inicio, 0);
-        String b;
-        pq.add(new Arista(inicio, b, 0));
+
+        // Usamos una PriorityQueue para obtener el nodo con la menor distancia
+        PriorityQueue<String> pq = new PriorityQueue<>(Comparator.comparingInt(distancias::get));
+        pq.add(inicio);
 
         while (!pq.isEmpty()) {
-            Arista actual = pq.poll();
-            String nodo = actual.getDestino();
-            int distancia = actual.getDistancia();
+            String nodoActual = pq.poll();
+            int distanciaActual = distancias.get(nodoActual);
 
-            if (distancia > distancias.get(nodo)) continue;
+            // Recorremos los vecinos del nodo actual
+            for (Arista vecino : adjList.get(nodoActual)) {
+                String destinoVecino = vecino.getDestino();
+                int nuevaDistancia = distanciaActual + vecino.getDistancia();
 
-            for (Arista vecino : adjList.get(nodo)) {
-                int nuevaDistancia = distancia + vecino.getDistancia();
-                if (nuevaDistancia < distancias.get(vecino.getDestino())) {
-                    distancias.put(vecino.getDestino(), nuevaDistancia);
-                    previos.put(vecino.getDestino(), nodo);
-                    pq.add(new Arista(vecino.getDestino(), b, nuevaDistancia));
+                // Si encontramos una ruta más corta a un vecino, la actualizamos
+                if (nuevaDistancia < distancias.get(destinoVecino)) {
+                    distancias.put(destinoVecino, nuevaDistancia);
+                    previos.put(destinoVecino, nodoActual);
+                    pq.add(destinoVecino);
                 }
             }
         }
 
+        // Reconstruir la ruta más corta
         List<String> ruta = new ArrayList<>();
         for (String at = destino; at != null; at = previos.get(at)) {
             ruta.add(at);
         }
         Collections.reverse(ruta);
+
         return ruta.get(0).equals(inicio) ? ruta : Collections.emptyList();
     }
 
