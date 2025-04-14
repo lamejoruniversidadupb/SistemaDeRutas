@@ -1,73 +1,133 @@
 package rutas;
 
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
 
-public class InterfazGrafica extends JPanel {
-    
+public class InterfazGrafica extends JFrame {
+    private final JComboBox<String> inicioCombo;
+    private final JComboBox<String> destinoCombo;
+    private final JTextArea resultadoArea;
+    private final Grafos grafo;
+    private List<String> rutaActual;
+    private GrafoPanel panelGrafo;
+
     public InterfazGrafica() {
-        setPreferredSize(new Dimension(800, 600));
-    }
-    
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        
-        // Dibujar nodos
-        drawNode(g, "I", 100, 100);
-        drawNode(g, "K", 150, 200);
-        drawNode(g, "L", 100, 50);
-        drawNode(g, "H", 200, 100);
-        drawNode(g, "E", 300, 150);
-        drawNode(g, "D", 400, 200);
-        drawNode(g, "J", 500, 250);
-        drawNode(g, "A", 600, 300);
-        drawNode(g, "B", 650, 350);
-        drawNode(g, "C", 700, 400);
-        drawNode(g, "G", 350, 100);
-        drawNode(g, "F", 250, 50);
-        drawNode(g, "ZV", 450, 50);
-        
-        // Dibujar conexiones
-        drawLine(g, 100, 100, 150, 200);
-        drawLine(g, 100, 50, 100, 100);
-        drawLine(g, 150, 200, 300, 150);
-        drawLine(g, 200, 100, 300, 150);
-        drawLine(g, 300, 150, 400, 200);
-        drawLine(g, 400, 200, 500, 250);
-        drawLine(g, 500, 250, 600, 300);
-        drawLine(g, 600, 300, 650, 350);
-        drawLine(g, 650, 350, 700, 400);
-        drawLine(g, 350, 100, 300, 150);
-        drawLine(g, 250, 50, 300, 150);
-        drawLine(g, 450, 50, 500, 250);
-    }
-    
-    private void drawNode(Graphics g, String label, int x, int y) {
-        g.setColor(Color.WHITE);
-        g.fillOval(x - 15, y - 15, 30, 30);
-        g.setColor(Color.BLACK);
-        g.drawOval(x - 15, y - 15, 30, 30);
-        g.drawString(label, x - 5, y + 5);
-    }
-    
-    private void drawLine(Graphics g, int x1, int y1, int x2, int y2) {
-        g.setColor(Color.BLACK);
-        g.drawLine(x1, y1, x2, y2);
-    }
-    
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Diagrama de Nodos");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(new GraphInterface());
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-    }
+        setTitle("Sistema de Rutas UPB");
+        setExtendedState(JFrame.MAXIMIZED_BOTH); // Ventana en pantalla completa
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null); // Centrado
+        setUndecorated(true); // Sin bordes
 
-    private static class GraphInterface extends PopupMenu {
+        grafo = new Grafos();
+        Container container = getContentPane();
+        container.setLayout(new BorderLayout());
 
-        public GraphInterface() {
+        JPanel panelSuperior = new JPanel();
+        panelSuperior.setLayout(new FlowLayout());
+
+        inicioCombo = new JComboBox<>();
+        destinoCombo = new JComboBox<>();
+        for (String nodo : grafo.getNombresNodos()) {
+            inicioCombo.addItem(nodo);
+            destinoCombo.addItem(nodo);
         }
+
+        JButton calcularBtn = new JButton("Calcular Ruta");
+        calcularBtn.addActionListener(new CalcularRutaListener());
+
+        panelSuperior.add(new JLabel("Inicio:"));
+        panelSuperior.add(inicioCombo);
+        panelSuperior.add(new JLabel("Destino:"));
+        panelSuperior.add(destinoCombo);
+        panelSuperior.add(calcularBtn);
+
+        container.add(panelSuperior, BorderLayout.NORTH);
+
+        panelGrafo = new GrafoPanel();
+        container.add(panelGrafo, BorderLayout.CENTER);
+
+        resultadoArea = new JTextArea(3, 20);
+        resultadoArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(resultadoArea);
+        container.add(scrollPane, BorderLayout.SOUTH);
+    }
+
+    private class CalcularRutaListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String inicio = (String) inicioCombo.getSelectedItem();
+            String destino = (String) destinoCombo.getSelectedItem();
+
+            if (inicio != null && destino != null) {
+                rutaActual = grafo.dijkstra(inicio, destino);
+                if (rutaActual.isEmpty()) {
+                    resultadoArea.setText("No se encontró ruta entre " + inicio + " y " + destino);
+                } else {
+                    resultadoArea.setText("Ruta más corta: \n" + String.join(" -> ", rutaActual));
+                }
+                panelGrafo.repaint();  // Esto asegura que el panel se actualice y dibuje la ruta seleccionada
+            }
+        }
+    }
+
+    class GrafoPanel extends JPanel {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+
+            Dimension size = getSize(); // Obtener el tamaño del panel
+            double scaleX = size.width / 600.0; // Factor de escala en X
+            double scaleY = size.height / 500.0; // Factor de escala en Y
+
+            g2.setColor(Color.BLACK);
+            g2.setStroke(new BasicStroke(2));
+            for (Arista arista : grafo.getAristas()) {
+                Nodo n1 = grafo.getNodo(arista.getOrigen());
+                Nodo n2 = grafo.getNodo(arista.getDestino());
+                if (n1 != null && n2 != null)
+                    g2.drawLine((int)(n1.getX() * scaleX), (int)(n1.getY() * scaleY), (int)(n2.getX() * scaleX), (int)(n2.getY() * scaleY));
+            }
+
+            if (rutaActual != null && rutaActual.size() > 1) {
+                g2.setColor(Color.RED);
+                g2.setStroke(new BasicStroke(3));
+                for (int i = 0; i < rutaActual.size() - 1; i++) {
+                    Nodo n1 = grafo.getNodo(rutaActual.get(i));
+                    Nodo n2 = grafo.getNodo(rutaActual.get(i + 1));
+                    if (n1 != null && n2 != null)
+                        g2.drawLine((int)(n1.getX() * scaleX), (int)(n1.getY() * scaleY), (int)(n2.getX() * scaleX), (int)(n2.getY() * scaleY));
+                }
+            }
+
+            for (Nodo nodo : grafo.getNodos()) {
+                if (nodo.getNombre().equals("CAFETERIA") || nodo.getNombre().equals("PORTERIA")) {
+                    // Dibujar bloques (rectángulos) para CAFETERIA y PORTERIA
+                    g2.setColor(Color.GRAY);
+                    g2.fillRect((int)(nodo.getX() * scaleX) - 30, (int)(nodo.getY() * scaleY) - 20, 60, 40);
+                    g2.setColor(Color.BLACK);
+                    g2.drawRect((int)(nodo.getX() * scaleX) - 30, (int)(nodo.getY() * scaleY) - 20, 60, 40);
+                    g2.drawString(nodo.getNombre(), (int)(nodo.getX() * scaleX) - 20, (int)(nodo.getY() * scaleY) + 5);
+                } else {
+                    // Dibujar círculos para los otros nodos
+                    g2.setColor(Color.GRAY);
+                    g2.fillOval((int)(nodo.getX() * scaleX) - 15, (int)(nodo.getY() * scaleY) - 15, 30, 30);
+                    g2.setColor(Color.BLACK);
+                    g2.drawOval((int)(nodo.getX() * scaleX) - 15, (int)(nodo.getY() * scaleY) - 15, 30, 30);
+                    g2.drawString(nodo.getNombre(), (int)(nodo.getX() * scaleX) - 10, (int)(nodo.getY() * scaleY) + 5);
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            InterfazGrafica app = new InterfazGrafica();
+            app.setVisible(true);
+        });
     }
 }
