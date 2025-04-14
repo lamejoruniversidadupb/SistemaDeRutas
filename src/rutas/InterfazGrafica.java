@@ -17,10 +17,10 @@ public class InterfazGrafica extends JFrame {
 
     public InterfazGrafica() {
         setTitle("Sistema de Rutas UPB");
-        setExtendedState(JFrame.MAXIMIZED_BOTH); // Ventana en pantalla completa
+        setExtendedState(JFrame.MAXIMIZED_BOTH); 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Centrado
-        setUndecorated(true); // Sin bordes
+        setLocationRelativeTo(null); 
+        setUndecorated(true); 
 
         grafo = new Grafos();
         Container container = getContentPane();
@@ -69,7 +69,7 @@ public class InterfazGrafica extends JFrame {
                 } else {
                     resultadoArea.setText("Ruta más corta: \n" + String.join(" -> ", rutaActual));
                 }
-                panelGrafo.repaint();  // Esto asegura que el panel se actualice y dibuje la ruta seleccionada
+                panelGrafo.repaint();  
             }
         }
     }
@@ -80,9 +80,9 @@ public class InterfazGrafica extends JFrame {
             super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g;
 
-            Dimension size = getSize(); // Obtener el tamaño del panel
-            double scaleX = size.width / 600.0; // Factor de escala en X
-            double scaleY = size.height / 500.0; // Factor de escala en Y
+            Dimension size = getSize(); 
+            double scaleX = size.width / 600.0; 
+            double scaleY = size.height / 500.0; 
 
             g2.setColor(Color.BLACK);
             g2.setStroke(new BasicStroke(2));
@@ -93,6 +93,7 @@ public class InterfazGrafica extends JFrame {
                     g2.drawLine((int)(n1.getX() * scaleX), (int)(n1.getY() * scaleY), (int)(n2.getX() * scaleX), (int)(n2.getY() * scaleY));
             }
 
+            // Verifica si hay una ruta y dibuja la línea roja
             if (rutaActual != null && rutaActual.size() > 1) {
                 g2.setColor(Color.RED);
                 g2.setStroke(new BasicStroke(3));
@@ -104,16 +105,15 @@ public class InterfazGrafica extends JFrame {
                 }
             }
 
+            // Dibujar los nodos (circulares y rectangulares para ciertos nodos)
             for (Nodo nodo : grafo.getNodos()) {
                 if (nodo.getNombre().equals("CAFETERIA") || nodo.getNombre().equals("PORTERIA")) {
-                    // Dibujar bloques (rectángulos) para CAFETERIA y PORTERIA
                     g2.setColor(Color.GRAY);
                     g2.fillRect((int)(nodo.getX() * scaleX) - 30, (int)(nodo.getY() * scaleY) - 20, 60, 40);
                     g2.setColor(Color.BLACK);
                     g2.drawRect((int)(nodo.getX() * scaleX) - 30, (int)(nodo.getY() * scaleY) - 20, 60, 40);
                     g2.drawString(nodo.getNombre(), (int)(nodo.getX() * scaleX) - 20, (int)(nodo.getY() * scaleY) + 5);
                 } else {
-                    // Dibujar círculos para los otros nodos
                     g2.setColor(Color.GRAY);
                     g2.fillOval((int)(nodo.getX() * scaleX) - 15, (int)(nodo.getY() * scaleY) - 15, 30, 30);
                     g2.setColor(Color.BLACK);
