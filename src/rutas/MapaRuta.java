@@ -11,6 +11,7 @@ public class MapaRuta extends JFrame {
     private final JComboBox<String> inicioCombo;
     private final JComboBox<String> destinoCombo;
     private final JTextArea resultadoArea;
+    private final JLabel distanciaLabel;  // Nueva etiqueta para la distancia total
     private final Grafos grafo;
     private ListaEnlazada<String> rutaActual;
     private GrafoPanel panelGrafo;
@@ -45,7 +46,6 @@ public class MapaRuta extends JFrame {
         calcularBtn.setForeground(Color.WHITE);
         calcularBtn.setFont(new Font("Segoe UI", Font.BOLD, 16));
         calcularBtn.setFocusPainted(false);
-        calcularBtn.setBorder(new RoundedBorder(10));
         calcularBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         addHoverEffect(calcularBtn);
         calcularBtn.addActionListener(new CalcularRutaListener());
@@ -86,6 +86,12 @@ public class MapaRuta extends JFrame {
                 new Color(33, 150, 243)));
         scrollPane.setPreferredSize(new Dimension(0, 120));
         container.add(scrollPane, BorderLayout.SOUTH);
+
+        // Nueva etiqueta para mostrar la distancia total
+        distanciaLabel = new JLabel("Distancia total: 0 pasos");
+        distanciaLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        distanciaLabel.setForeground(new Color(33, 150, 243));
+        panelSuperior.add(distanciaLabel);
     }
 
     private void styleComboBox(JComboBox<String> comboBox) {
@@ -113,24 +119,6 @@ public class MapaRuta extends JFrame {
         });
     }
 
-    static class RoundedBorder extends LineBorder {
-        private final int radius;
-
-        public RoundedBorder(int radius) {
-            super(Color.WHITE, 2, true);
-            this.radius = radius;
-        }
-
-        @Override
-        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setColor(lineColor);
-            g2.setStroke(new BasicStroke(thickness));
-            g2.drawRoundRect(x + thickness / 2, y + thickness / 2, width - thickness, height - thickness, radius, radius);
-            g2.dispose();
-        }
-    }
-
     private class CalcularRutaListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -141,13 +129,24 @@ public class MapaRuta extends JFrame {
                 rutaActual = grafo.dijkstra(inicio, destino);
                 if (rutaActual == null || rutaActual.size() == 0) {
                     resultadoArea.setText("No se encontró ruta entre " + inicio + " y " + destino);
+                    distanciaLabel.setText("Distancia total: 0 pasos");
                 } else {
                     StringBuilder sb = new StringBuilder();
-                    for (String punto : rutaActual) {
-                        sb.append(punto).append(" -> ");
+                    double distanciaTotal = 0.0;
+                    for (int i = 0; i < rutaActual.size() - 1; i++) {
+                        String nodoActual = rutaActual.get(i);
+                        String siguienteNodo = rutaActual.get(i + 1);
+                        Arista arista = grafo.getArista(nodoActual, siguienteNodo); 
+                        if (arista != null) {
+                            distanciaTotal += arista.getPeso(); 
+                        }
+                        sb.append(nodoActual).append(" -> ");
                     }
-                    if (sb.length() > 4) sb.setLength(sb.length() - 4);
+                    sb.append(rutaActual.get(rutaActual.size() - 1));
                     resultadoArea.setText("Ruta más corta:\n" + sb);
+
+                    // Mostrar la distancia total como número entero en "pasos"
+                    distanciaLabel.setText("Distancia total: " + (int) distanciaTotal + " pasos");
                 }
                 panelGrafo.repaint();
             }

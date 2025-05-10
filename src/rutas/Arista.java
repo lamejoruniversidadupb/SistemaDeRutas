@@ -23,6 +23,10 @@ public class Arista {
         return distancia;
     }
 
+    public int getPeso() {
+        return distancia;
+    }
+
     @Override
     public String toString() {
         return "Arista{" +

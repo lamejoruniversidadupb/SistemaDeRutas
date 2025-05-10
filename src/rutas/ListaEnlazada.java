@@ -11,7 +11,7 @@ public class ListaEnlazada<T> implements Iterable<T> {
         tamaño = 0;
     }
 
-    // Agregar un elemento al final de la lista
+    
     public void agregar(T elemento) {
         Nodo<T> nuevoNodo = new Nodo<>(elemento);
         if (cabeza == null) {
@@ -26,7 +26,7 @@ public class ListaEnlazada<T> implements Iterable<T> {
         tamaño++;
     }
 
-    // Insertar un elemento al inicio de la lista
+    
     public void insertarInicio(T elemento) {
         Nodo<T> nuevoNodo = new Nodo<>(elemento);
         nuevoNodo.siguiente = cabeza;
@@ -34,37 +34,36 @@ public class ListaEnlazada<T> implements Iterable<T> {
         tamaño++;
     }
 
-    // Obtener el tamaño de la lista
+    
     public int size() {
         return tamaño;
     }
 
-    // Obtener el elemento en la posición 'indice'
+    
     public T get(int indice) {
         Nodo<T> temp = cabeza;
         for (int i = 0; i < indice; i++) {
             if (temp == null) {
-                return null;  // Índice fuera de rango
+                return null;  
             }
             temp = temp.siguiente;
         }
         return temp != null ? temp.elemento : null;
     }
 
-    // Vaciar la lista
+    
     public void clear() {
         cabeza = null;
         tamaño = 0;
     }
 
-    // Agregar todos los elementos de otra lista
     public void agregarTodos(ListaEnlazada<T> otraLista) {
         for (T elemento : otraLista) {
-            agregar(elemento);  // Agrega cada elemento al final de la lista
+            agregar(elemento);  
         }
     }
 
-    // Copiar los elementos de otra lista
+   
     public void copiarDesde(ListaEnlazada<T> otra) {
         this.cabeza = null;
         this.tamaño = 0;
@@ -73,7 +72,7 @@ public class ListaEnlazada<T> implements Iterable<T> {
         }
     }
 
-    // Iterador para recorrer la lista
+   
     @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {
@@ -93,7 +92,7 @@ public class ListaEnlazada<T> implements Iterable<T> {
         };
     }
 
-    // Nodo interno para la lista
+   
     private static class Nodo<T> {
         T elemento;
         Nodo<T> siguiente;

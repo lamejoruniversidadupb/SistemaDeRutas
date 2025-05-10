@@ -3,6 +3,7 @@ package rutas;
 public class Grafos {
     private final ListaEnlazada<Nodo> nodos = new ListaEnlazada<>();
     private final ListaEnlazada<Arista> aristas = new ListaEnlazada<>();
+    private final ListaEnlazada<DistanciaNodo> distancias = new ListaEnlazada<>();
 
     public Grafos() {
         inicializarNodos();
@@ -27,6 +28,7 @@ public class Grafos {
     }
 
     private void inicializarGrafo() {
+        
         conectar("A", "B", 10);
         conectar("B", "C", 10);
         conectar("B", "CAFETERIA", 15);
@@ -37,7 +39,8 @@ public class Grafos {
         conectar("J", "D", 40);
         conectar("D", "E", 40);
         conectar("D", "G", 25);
-        conectar("D", "K", 150);
+        conectar("D", "K", 150); 
+        conectar("D", "K", 50);  
         conectar("E", "F", 10);
         conectar("E", "I", 60);
         conectar("F", "G", 20);
@@ -55,15 +58,15 @@ public class Grafos {
     }
 
     private void conectar(String a, String b, int distancia) {
+        System.out.println("Conectando: " + a + " -> " + b + " con distancia: " + distancia); // Depuración
         aristas.agregar(new Arista(a, b, distancia));
-        aristas.agregar(new Arista(b, a, distancia)); // para grafo no dirigido
+        aristas.agregar(new Arista(b, a, distancia));
     }
 
     public ListaEnlazada<String> dijkstra(String inicio, String destino) {
         ListaEnlazada<String> nodosPorVisitar = new ListaEnlazada<>();
         ListaEnlazada<String> nodosVisitados = new ListaEnlazada<>();
         ListaEnlazada<String> ruta = new ListaEnlazada<>();
-        ListaEnlazada<DistanciaNodo> distancias = new ListaEnlazada<>();
 
         // Inicializar distancias
         for (Nodo nodo : nodos) {
@@ -73,7 +76,6 @@ public class Grafos {
         }
 
         while (nodosPorVisitar.size() > 0) {
-     
             DistanciaNodo actual = obtenerMenorDistancia(distancias, nodosPorVisitar);
             if (actual == null) break;
 
@@ -95,7 +97,7 @@ public class Grafos {
             }
         }
 
-    
+        
         String actual = destino;
         while (actual != null) {
             ruta.insertarInicio(actual);
@@ -103,6 +105,7 @@ public class Grafos {
             actual = dn != null ? dn.anterior : null;
         }
 
+        // Verificar si la ruta es válida
         if (ruta.size() > 0 && ruta.get(0).equals(inicio)) {
             return ruta;
         } else {
@@ -153,16 +156,34 @@ public class Grafos {
                 return nodo;
             }
         }
-        return null;  
+        return null;
     }
-    public ListaEnlazada<String> getNombresNodos() {
-    ListaEnlazada<String> nombresNodos = new ListaEnlazada<>();
-    for (Nodo nodo : nodos) {
-        nombresNodos.agregar(nodo.getNombre());
-    }
-    return nombresNodos;
-}
 
+    public Arista getArista(String origen, String destino) {
+        for (Arista arista : aristas) {
+            if (arista.getOrigen().equals(origen) && arista.getDestino().equals(destino)) {
+                return arista;
+            }
+        }
+        return null;
+    }
+
+    public int getPeso(String origen, String destino) {
+        for (Arista arista : aristas) {
+            if (arista.getOrigen().equals(origen) && arista.getDestino().equals(destino)) {
+                return arista.getDistancia();
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    public ListaEnlazada<String> getNombresNodos() {
+        ListaEnlazada<String> nombresNodos = new ListaEnlazada<>();
+        for (Nodo nodo : nodos) {
+            nombresNodos.agregar(nodo.getNombre());
+        }
+        return nombresNodos;
+    }
 
     public ListaEnlazada<Nodo> getNodos() {
         return nodos;
@@ -170,6 +191,10 @@ public class Grafos {
 
     public ListaEnlazada<Arista> getAristas() {
         return aristas;
+    }
+
+    public ListaEnlazada<DistanciaNodo> getDistancias() {
+        return distancias;
     }
 
     private static class DistanciaNodo {
