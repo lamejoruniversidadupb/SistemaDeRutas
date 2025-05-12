@@ -1,9 +1,12 @@
 package rutas;
 
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+
 public class Grafos {
     private final ListaEnlazada<Nodo> nodos = new ListaEnlazada<>();
     private final ListaEnlazada<Arista> aristas = new ListaEnlazada<>();
-    private final ListaEnlazada<DistanciaNodo> distancias = new ListaEnlazada<>();
+    private ListaEnlazada<DistanciaNodo> distancias = new ListaEnlazada<>();
 
     public Grafos() {
         inicializarNodos();
@@ -28,7 +31,6 @@ public class Grafos {
     }
 
     private void inicializarGrafo() {
-        
         conectar("A", "B", 10);
         conectar("B", "C", 10);
         conectar("B", "CAFETERIA", 15);
@@ -39,8 +41,8 @@ public class Grafos {
         conectar("J", "D", 40);
         conectar("D", "E", 40);
         conectar("D", "G", 25);
-        conectar("D", "K", 150); 
-        conectar("D", "K", 50);  
+        conectar("D", "K", 150);
+        conectar("D", "K", 50);
         conectar("E", "F", 10);
         conectar("E", "I", 60);
         conectar("F", "G", 20);
@@ -53,22 +55,26 @@ public class Grafos {
         conectar("C", "J", 15);
     }
 
-    private void agregarNodo(Nodo nodo) {
+    public void agregarNodo(Nodo nodo) {
         nodos.agregar(nodo);
     }
 
-    private void conectar(String a, String b, int distancia) {
-        System.out.println("Conectando: " + a + " -> " + b + " con distancia: " + distancia); // Depuración
+    public void eliminarNodo(Nodo nodo) {
+        nodos.eliminar(nodo);
+    
+    }
+
+    public void conectar(String a, String b, int distancia) {
         aristas.agregar(new Arista(a, b, distancia));
         aristas.agregar(new Arista(b, a, distancia));
     }
 
     public ListaEnlazada<String> dijkstra(String inicio, String destino) {
+        distancias.clear(); // limpiar distancias previas
         ListaEnlazada<String> nodosPorVisitar = new ListaEnlazada<>();
         ListaEnlazada<String> nodosVisitados = new ListaEnlazada<>();
         ListaEnlazada<String> ruta = new ListaEnlazada<>();
 
-        // Inicializar distancias
         for (Nodo nodo : nodos) {
             int distancia = nodo.getNombre().equals(inicio) ? 0 : Integer.MAX_VALUE;
             distancias.agregar(new DistanciaNodo(nodo.getNombre(), distancia, null));
@@ -86,7 +92,7 @@ public class Grafos {
                 if (arista.getOrigen().equals(actual.nombre)) {
                     String vecino = arista.getDestino();
                     if (!contiene(nodosVisitados, vecino)) {
-                        int nuevaDistancia = actual.distancia + arista.getDistancia();
+                        int nuevaDistancia = (actual.distancia == Integer.MAX_VALUE ? Integer.MAX_VALUE : actual.distancia + arista.getDistancia());
                         DistanciaNodo dnVecino = buscarDistancia(distancias, vecino);
                         if (dnVecino != null && nuevaDistancia < dnVecino.distancia) {
                             dnVecino.distancia = nuevaDistancia;
@@ -97,15 +103,13 @@ public class Grafos {
             }
         }
 
-        
         String actual = destino;
         while (actual != null) {
             ruta.insertarInicio(actual);
             DistanciaNodo dn = buscarDistancia(distancias, actual);
-            actual = dn != null ? dn.anterior : null;
+            actual = (dn != null) ? dn.anterior : null;
         }
 
-        // Verificar si la ruta es válida
         if (ruta.size() > 0 && ruta.get(0).equals(inicio)) {
             return ruta;
         } else {
@@ -135,6 +139,33 @@ public class Grafos {
         lista.clear();
         lista.agregarTodos(nueva);
     }
+    public void eliminarNodo(String nombreNodo) {
+    // Eliminar las aristas relacionadas con el nodo
+    ListaEnlazada<Arista> aristasAEliminar = new ListaEnlazada<>();
+    for (Arista arista : aristas) {
+        if (arista.getOrigen().equals(nombreNodo) || arista.getDestino().equals(nombreNodo)) {
+            aristasAEliminar.agregar(arista);
+        }
+    }
+
+    // Eliminar las aristas de la lista de aristas
+    for (Arista arista : aristasAEliminar) {
+        aristas.eliminar(arista);
+    }
+
+    // Eliminar el nodo de la lista de nodos
+    Nodo nodoAEliminar = null;
+    for (Nodo nodo : nodos) {
+        if (nodo.getNombre().equals(nombreNodo)) {
+            nodoAEliminar = nodo;
+            break;
+        }
+    }
+    if (nodoAEliminar != null) {
+        nodos.eliminar(nodoAEliminar);
+    }
+}
+
 
     private boolean contiene(ListaEnlazada<String> lista, String valor) {
         for (String s : lista) {
@@ -195,6 +226,17 @@ public class Grafos {
 
     public ListaEnlazada<DistanciaNodo> getDistancias() {
         return distancias;
+    }
+
+    public void actualizarInterfaz(JComboBox<String> comboBoxInicio, JComboBox<String> comboBoxDestino) {
+        DefaultComboBoxModel<String> modelInicio = new DefaultComboBoxModel<>();
+        DefaultComboBoxModel<String> modelDestino = new DefaultComboBoxModel<>();
+        for (Nodo nodo : nodos) {
+            modelInicio.addElement(nodo.getNombre());
+            modelDestino.addElement(nodo.getNombre());
+        }
+        comboBoxInicio.setModel(modelInicio);
+        comboBoxDestino.setModel(modelDestino);
     }
 
     private static class DistanciaNodo {

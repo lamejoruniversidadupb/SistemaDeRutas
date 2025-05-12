@@ -11,7 +11,7 @@ public class MapaRuta extends JFrame {
     private final JComboBox<String> inicioCombo;
     private final JComboBox<String> destinoCombo;
     private final JTextArea resultadoArea;
-    private final JLabel distanciaLabel;  // Nueva etiqueta para la distancia total
+    private final JLabel distanciaLabel;
     private final Grafos grafo;
     private ListaEnlazada<String> rutaActual;
     private GrafoPanel panelGrafo;
@@ -42,13 +42,16 @@ public class MapaRuta extends JFrame {
         styleComboBox(destinoCombo);
 
         JButton calcularBtn = new JButton("Calcular Ruta");
-        calcularBtn.setBackground(new Color(33, 150, 243));
-        calcularBtn.setForeground(Color.WHITE);
-        calcularBtn.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        calcularBtn.setFocusPainted(false);
-        calcularBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        addHoverEffect(calcularBtn);
+        styleButton(calcularBtn);
         calcularBtn.addActionListener(new CalcularRutaListener());
+
+        JButton agregarEdificioBtn = new JButton("Agregar Edificio");
+        styleButton(agregarEdificioBtn);
+        agregarEdificioBtn.addActionListener(e -> agregarEdificio());
+
+        JButton eliminarEdificioBtn = new JButton("Eliminar Edificio de Ruta");
+        styleButton(eliminarEdificioBtn);
+        eliminarEdificioBtn.addActionListener(e -> eliminarEdificioDeRuta());
 
         JLabel labelInicio = new JLabel("Inicio:");
         JLabel labelDestino = new JLabel("Destino:");
@@ -60,10 +63,17 @@ public class MapaRuta extends JFrame {
         panelSuperior.add(labelDestino);
         panelSuperior.add(destinoCombo);
         panelSuperior.add(calcularBtn);
+        panelSuperior.add(agregarEdificioBtn);
+        panelSuperior.add(eliminarEdificioBtn);
+
+        distanciaLabel = new JLabel("Distancia total: 0 pasos");
+        distanciaLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        distanciaLabel.setForeground(new Color(33, 150, 243));
+        panelSuperior.add(distanciaLabel);
 
         container.add(panelSuperior, BorderLayout.NORTH);
 
-        panelGrafo = new GrafoPanel();
+        panelGrafo = new GrafoPanel(grafo, rutaActual);
         panelGrafo.setBackground(new Color(245, 245, 245));
         container.add(panelGrafo, BorderLayout.CENTER);
 
@@ -78,6 +88,7 @@ public class MapaRuta extends JFrame {
         ));
         resultadoArea.setLineWrap(true);
         resultadoArea.setWrapStyleWord(true);
+
         JScrollPane scrollPane = new JScrollPane(resultadoArea);
         scrollPane.setBorder(BorderFactory.createTitledBorder(null, "Resultado",
                 javax.swing.border.TitledBorder.LEFT,
@@ -85,13 +96,8 @@ public class MapaRuta extends JFrame {
                 new Font("Segoe UI", Font.BOLD, 14),
                 new Color(33, 150, 243)));
         scrollPane.setPreferredSize(new Dimension(0, 120));
-        container.add(scrollPane, BorderLayout.SOUTH);
 
-        // Nueva etiqueta para mostrar la distancia total
-        distanciaLabel = new JLabel("Distancia total: 0 pasos");
-        distanciaLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        distanciaLabel.setForeground(new Color(33, 150, 243));
-        panelSuperior.add(distanciaLabel);
+        container.add(scrollPane, BorderLayout.SOUTH);
     }
 
     private void styleComboBox(JComboBox<String> comboBox) {
@@ -107,12 +113,20 @@ public class MapaRuta extends JFrame {
         label.setForeground(new Color(33, 150, 243));
     }
 
+    private void styleButton(JButton button) {
+        button.setBackground(new Color(33, 150, 243));
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        addHoverEffect(button);
+    }
+
     private void addHoverEffect(JButton button) {
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 button.setBackground(new Color(25, 118, 210));
             }
-
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 button.setBackground(new Color(33, 150, 243));
             }
@@ -136,24 +150,143 @@ public class MapaRuta extends JFrame {
                     for (int i = 0; i < rutaActual.size() - 1; i++) {
                         String nodoActual = rutaActual.get(i);
                         String siguienteNodo = rutaActual.get(i + 1);
-                        Arista arista = grafo.getArista(nodoActual, siguienteNodo); 
+                        Arista arista = grafo.getArista(nodoActual, siguienteNodo);
                         if (arista != null) {
-                            distanciaTotal += arista.getPeso(); 
+                            distanciaTotal += arista.getPeso();
                         }
                         sb.append(nodoActual).append(" -> ");
                     }
                     sb.append(rutaActual.get(rutaActual.size() - 1));
                     resultadoArea.setText("Ruta más corta:\n" + sb);
-
-                    // Mostrar la distancia total como número entero en "pasos"
                     distanciaLabel.setText("Distancia total: " + (int) distanciaTotal + " pasos");
                 }
+                panelGrafo.setRutaActual(rutaActual);
                 panelGrafo.repaint();
             }
         }
     }
 
+   private void agregarEdificio() {
+    if (rutaActual == null || rutaActual.size() == 0) {
+        JOptionPane.showMessageDialog(this, "Primero calcula una ruta.");
+        return;
+    }
+
+    String nombre = JOptionPane.showInputDialog(this, "Nombre del nuevo edificio:");
+    if (nombre != null && !nombre.trim().isEmpty()) {
+        String[] nodosEnRuta = new String[rutaActual.size()];
+        for (int i = 0; i < rutaActual.size(); i++) {
+            nodosEnRuta[i] = rutaActual.get(i);
+        }
+
+        String nodoSiguiente = (String) JOptionPane.showInputDialog(
+                this, "Seleccione el nodo después del cual agregar el nuevo edificio:",
+                "Agregar Edificio a la Ruta", JOptionPane.PLAIN_MESSAGE,
+                null, nodosEnRuta, nodosEnRuta[0]);
+
+        if (nodoSiguiente != null) {
+            
+            if (((DefaultComboBoxModel<String>)inicioCombo.getModel()).getIndexOf(nombre) == -1) {
+                inicioCombo.addItem(nombre);
+                destinoCombo.addItem(nombre);
+            }
+
+            
+            rutaActual.agregar(nombre); 
+
+            StringBuilder sb = new StringBuilder();
+            double distanciaTotal = 0.0;
+            for (int i = 0; i < rutaActual.size() - 1; i++) {
+                String nodoActual = rutaActual.get(i);
+                String siguienteNodo = rutaActual.get(i + 1);
+                Arista arista = grafo.getArista(nodoActual, siguienteNodo);
+                if (arista != null) {
+                    distanciaTotal += arista.getPeso();
+                }
+                sb.append(nodoActual).append(" -> ");
+            }
+            sb.append(rutaActual.get(rutaActual.size() - 1));
+            resultadoArea.setText("Ruta modificada:\n" + sb);
+            distanciaLabel.setText("Distancia total: " + (int) distanciaTotal + " pasos");
+
+            panelGrafo.setRutaActual(rutaActual);
+            panelGrafo.repaint();
+
+            JOptionPane.showMessageDialog(this, "Edificio '" + nombre + "' agregado a la ruta.");
+        }
+    }
+}
+ 
+
+
+    private void eliminarEdificioDeRuta() {
+    if (rutaActual == null || rutaActual.size() == 0) {
+        JOptionPane.showMessageDialog(this, "Primero calcula una ruta.");
+        return;
+    }
+    String[] nodosEnRuta = new String[rutaActual.size()];
+    for (int i = 0; i < rutaActual.size(); i++) {
+        nodosEnRuta[i] = rutaActual.get(i);
+    }
+
+    String nodoEliminar = (String) JOptionPane.showInputDialog(
+            this, "Seleccione edificio a eliminar de la ruta:",
+            "Eliminar Edificio", JOptionPane.PLAIN_MESSAGE,
+            null, nodosEnRuta, nodosEnRuta[0]);
+
+    if (nodoEliminar != null) {
+        
+        for (int i = 0; i < rutaActual.size(); i++) {
+            if (rutaActual.get(i).equals(nodoEliminar)) {
+                rutaActual.remove(rutaActual.get(i));  
+                break;
+            }
+        }
+
+       
+        String inicio = (String) inicioCombo.getSelectedItem();
+        String destino = (String) destinoCombo.getSelectedItem();
+        if (inicio != null && destino != null) {
+            rutaActual = grafo.dijkstra(inicio, destino);
+            if (rutaActual == null || rutaActual.size() == 0) {
+                resultadoArea.setText("No se encontró ruta entre " + inicio + " y " + destino);
+                distanciaLabel.setText("Distancia total: 0 pasos");
+            } else {
+                StringBuilder sb = new StringBuilder();
+                double distanciaTotal = 0.0;
+                for (int i = 0; i < rutaActual.size() - 1; i++) {
+                    String nodoActual = rutaActual.get(i);
+                    String siguienteNodo = rutaActual.get(i + 1);
+                    Arista arista = grafo.getArista(nodoActual, siguienteNodo);
+                    if (arista != null) {
+                        distanciaTotal += arista.getPeso();
+                    }
+                    sb.append(nodoActual).append(" -> ");
+                }
+                sb.append(rutaActual.get(rutaActual.size() - 1));
+                resultadoArea.setText("Ruta más corta:\n" + sb);
+                distanciaLabel.setText("Distancia total: " + (int) distanciaTotal + " pasos");
+            }
+        }
+        JOptionPane.showMessageDialog(this, "Edificio '" + nodoEliminar + "' eliminado de la ruta.");
+        panelGrafo.repaint();
+    }
+}
+
+
     class GrafoPanel extends JPanel {
+        private final Grafos grafo;
+        private ListaEnlazada<String> rutaActual;
+
+        public GrafoPanel(Grafos grafo, ListaEnlazada<String> rutaActual) {
+            this.grafo = grafo;
+            this.rutaActual = rutaActual;
+        }
+
+        public void setRutaActual(ListaEnlazada<String> ruta) {
+            this.rutaActual = ruta;
+        }
+
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -164,6 +297,7 @@ public class MapaRuta extends JFrame {
             double scaleX = size.width / 400.0;
             double scaleY = size.height / 500.0;
 
+            
             g2.setColor(new Color(100, 100, 100, 150));
             g2.setStroke(new BasicStroke(2));
             for (Arista arista : grafo.getAristas()) {
@@ -173,6 +307,7 @@ public class MapaRuta extends JFrame {
                     g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY), (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
             }
 
+            
             if (rutaActual != null && rutaActual.size() > 1) {
                 g2.setColor(new Color(244, 67, 54));
                 g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
@@ -184,6 +319,7 @@ public class MapaRuta extends JFrame {
                 }
             }
 
+            
             for (Nodo nodo : grafo.getNodos()) {
                 int x = (int) (nodo.getX() * scaleX);
                 int y = (int) (nodo.getY() * scaleY);
@@ -220,8 +356,8 @@ public class MapaRuta extends JFrame {
         }
 
         SwingUtilities.invokeLater(() -> {
-            MapaRuta app = new MapaRuta();
-            app.setVisible(true);
+            new MapaRuta().setVisible(true);
         });
     }
 }
+
