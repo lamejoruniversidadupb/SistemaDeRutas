@@ -24,12 +24,12 @@ public class ListaEnlazada<T> implements Iterable<T> {
         }
         tamaño++;
     }
-    public void agregarTodos(ListaEnlazada<T> otraLista) {
-    for (T valor : otraLista) {
-        this.agregar(valor);
-    }
-}
 
+    public void agregarTodos(ListaEnlazada<T> otraLista) {
+        for (T valor : otraLista) {
+            this.agregar(valor);
+        }
+    }
 
     public void agregarInicio(T valor) {
         NodoLista<T> nuevoNodo = new NodoLista<>(valor);
@@ -38,14 +38,9 @@ public class ListaEnlazada<T> implements Iterable<T> {
         tamaño++;
     }
 
-    
     public void insertarInicio(T valor) {
-    NodoLista<T> nuevoNodo = new NodoLista<>(valor);
-    nuevoNodo.siguiente = cabeza;
-    cabeza = nuevoNodo;
-    tamaño++;
-}
-
+        agregarInicio(valor);
+    }
 
     public void eliminarSi(java.util.function.Predicate<T> condicion) {
         if (cabeza == null) return;
