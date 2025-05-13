@@ -190,7 +190,6 @@ public class Grafos {
                 if (arista.getOrigen().equals(actual.nombre)) {
                     String vecino = arista.getDestino();
                     if (!contiene(nodosVisitados, vecino)) {
-                        // Evitar usar la arista directa entre inicio y destino si pertenece a la ruta principal
                         if (!estaEnRutaPrincipal(arista, rutaPrincipal)) {
                             int nuevaDistancia = (actual.distancia == Integer.MAX_VALUE ? Integer.MAX_VALUE : actual.distancia + arista.getDistancia());
                             DistanciaNodo dnVecino = buscarDistancia(distancias, vecino);

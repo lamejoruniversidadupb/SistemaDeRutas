@@ -8,11 +8,11 @@ public class Nodo {
     private final int x;
     private final int y;
 
-    // Agregar lista estática o conjunto que contiene los nodos con escaleras
+
     private static final Set<String> nodosConEscaleras = new HashSet<>();
 
     static {
-        // Aquí agregar los nombres de nodos que tienen escaleras
+    
         nodosConEscaleras.add("PORTERIA");
         nodosConEscaleras.add("K");
         nodosConEscaleras.add("D");
@@ -39,7 +39,7 @@ public class Nodo {
         return y;
     }
 
-    // Nuevo método para saber si el nodo tiene escaleras
+ 
     public boolean tieneEscalera() {
         return nodosConEscaleras.contains(nombre);
     }

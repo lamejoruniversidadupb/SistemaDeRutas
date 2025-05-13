@@ -15,9 +15,9 @@ public class MapaRuta extends JFrame {
     private final Grafos grafo;
     private ListaEnlazada<String> rutaActual;
     private GrafoPanel panelGrafo;
-    private boolean mostrarRutaActual = true; // Controla si se dibuja la línea roja
-    private boolean evitarEscalerasActivo = false; // Nuevo flag para evitar escaleras
-    private JToggleButton evitarEscalerasBtn; // Cambiar a JToggleButton
+    private boolean mostrarRutaActual = true; 
+    private boolean evitarEscalerasActivo = false; 
+    private JToggleButton evitarEscalerasBtn; 
 
     public MapaRuta() {
         setTitle("Sistema de Rutas UPB");
@@ -30,7 +30,7 @@ public class MapaRuta extends JFrame {
         Container container = getContentPane();
         container.setLayout(new BorderLayout());
 
-        // Fondo con un color degradado
+        
         JPanel backgroundPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -42,7 +42,7 @@ public class MapaRuta extends JFrame {
         };
         backgroundPanel.setLayout(new BorderLayout());
 
-        // Cambiar a GridLayout para mejor control de bordes y alineación
+   
         JPanel panelSuperior = new JPanel(new GridLayout(2, 5, 15, 15)); 
         panelSuperior.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         panelSuperior.setBackground(new Color(255, 255, 255, 230));
@@ -76,7 +76,7 @@ public class MapaRuta extends JFrame {
         evitarEscalerasBtn = new JToggleButton("Evitar Escaleras");
         styleToggleButton(evitarEscalerasBtn);
         evitarEscalerasBtn.setPreferredSize(new Dimension(150, 40));
-        evitarEscalerasBtn.setEnabled(true); // Asegurar habilitado
+        evitarEscalerasBtn.setEnabled(true); 
 
         calcularBtn.addActionListener(new CalcularRutaListener());
         agregarEdificioBtn.addActionListener(e -> agregarEdificio());
@@ -173,7 +173,7 @@ public class MapaRuta extends JFrame {
                 toggleButton.setBackground(new Color(33, 150, 243));
             }
             public void mousePressed(java.awt.event.MouseEvent evt) {
-                // Cambiar color al pulsar para feedback visual
+             
                 if (toggleButton.isSelected()) {
                     toggleButton.setBackground(new Color(21, 101, 192));
                 } else {
@@ -207,14 +207,14 @@ public class MapaRuta extends JFrame {
         if (evitarEscalerasActivo) {
             rutaActual = grafo.dijkstraEvitarEscaleras(inicio, destino);
             if (rutaActual == null || rutaActual.size() == 0) {
-                // Si no pudo evitar escaleras, revertir a ruta normal
+                
                 rutaActual = grafo.dijkstra(inicio, destino);
                 resultadoArea.setText("No fue posible evitar escaleras, mostrando ruta con escaleras:\n");
             } else {
                 resultadoArea.setText("Mostrando ruta evitando escaleras:\n");
             }
         } else {
-            // Cuando se desactiva, ruta normal
+            
             rutaActual = grafo.dijkstra(inicio, destino);
             resultadoArea.setText("");
         }
@@ -266,35 +266,22 @@ public class MapaRuta extends JFrame {
     }
 
     private void reiniciarRuta() {
-        String inicio = (String) inicioCombo.getSelectedItem();
-        String destino = (String) destinoCombo.getSelectedItem();
+    
+    inicioCombo.setSelectedIndex(0); 
+    destinoCombo.setSelectedIndex(0); 
 
-        if (inicio != null && destino != null) {
-            if (evitarEscalerasActivo) {
-                rutaActual = grafo.dijkstraEvitarEscaleras(inicio, destino);
-                if (rutaActual == null || rutaActual.size() == 0) {
-                    rutaActual = grafo.dijkstra(inicio, destino);
-                    resultadoArea.setText("No fue posible evitar escaleras, mostrando ruta con escaleras:\n");
-                } else {
-                    resultadoArea.setText("Mostrando ruta evitando escaleras:\n");
-                }
-            } else {
-                rutaActual = grafo.dijkstra(inicio, destino);
-                resultadoArea.setText("");
-            }
+    
+    resultadoArea.setText("");
+    distanciaLabel.setText("Distancia total: 0 pasos");
 
-            if (rutaActual == null || rutaActual.size() == 0) {
-                resultadoArea.setText("No se encontró ruta entre " + inicio + " y " + destino);
-                distanciaLabel.setText("Distancia total: 0 pasos");
-            } else {
-                mostrarRutasConAlternativas(rutaActual);
-            }
-            panelGrafo.setMostrarEscaleras(evitarEscalerasActivo);
-            panelGrafo.setRutaActual(rutaActual);
-            panelGrafo.repaint();
-            mostrarRutaActual = true;
-        }
-    }
+    
+    rutaActual = new ListaEnlazada<>(); 
+
+
+    panelGrafo.setRutaActual(rutaActual);
+    panelGrafo.repaint();
+}
+
 
     private void mostrarRutasConAlternativas(ListaEnlazada<String> rutaPrincipal) {
         if (rutaPrincipal == null || rutaPrincipal.size() == 0) {
@@ -321,7 +308,7 @@ public class MapaRuta extends JFrame {
         for (int i = 0; i < rutaPrincipal.size() - 1; i++) {
             String nodoOrigen = rutaPrincipal.get(i);
             String nodoDestino = rutaPrincipal.get(i + 1);
-            // Obtener ruta alterna entre estos dos nodos que no sea igual a la principal (si existe)
+            
             ListaEnlazada<String> rutaAlternativa = grafo.dijkstraAlternativo(nodoOrigen, nodoDestino, rutaPrincipal);
             if (rutaAlternativa != null && rutaAlternativa.size() > 1) {
                 sb.append("De ").append(nodoOrigen).append(" a ").append(nodoDestino).append(": ");
@@ -397,8 +384,8 @@ public class MapaRuta extends JFrame {
     class GrafoPanel extends JPanel {
         private final Grafos grafo;
         private ListaEnlazada<String> rutaActual;
-        private java.util.List<ListaEnlazada<String>> rutasAlternativas; // Para almacenar rutas alternas
-        private boolean mostrarEscaleras = false; // Nuevo flag para controlar dibujo especial
+        private java.util.List<ListaEnlazada<String>> rutasAlternativas; 
+        private boolean mostrarEscaleras = false; 
 
         public GrafoPanel(Grafos grafo, ListaEnlazada<String> rutaActual) {
             this.grafo = grafo;
@@ -408,7 +395,7 @@ public class MapaRuta extends JFrame {
 
         public void setRutaActual(ListaEnlazada<String> ruta) {
             this.rutaActual = ruta;
-            // Construir rutas alternativas de nodo a nodo
+           
             rutasAlternativas.clear();
             if (ruta != null) {
                 for (int i = 0; i < ruta.size() - 1; i++) {
@@ -436,7 +423,7 @@ public class MapaRuta extends JFrame {
             double scaleX = size.width / 400.0;
             double scaleY = size.height / 500.0;
 
-            // Dibujar todas las aristas
+            
             g2.setColor(new Color(100, 100, 100, 150));
             g2.setStroke(new BasicStroke(2));
             for (Arista arista : grafo.getAristas()) {
@@ -446,9 +433,9 @@ public class MapaRuta extends JFrame {
                     g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY), (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
             }
 
-            // Dibujar rutas alternativas en color azul claro
+            
             if (rutasAlternativas != null) {
-                g2.setColor(new Color(33, 150, 243, 180)); // Azul semi-transparente
+                g2.setColor(new Color(33, 150, 243, 180)); 
                 g2.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
                 for (ListaEnlazada<String> altRuta : rutasAlternativas) {
                     if (altRuta != null && altRuta.size() > 1) {
@@ -464,7 +451,7 @@ public class MapaRuta extends JFrame {
                 }
             }
 
-            // Dibujar ruta actual en rojo
+            
             if (rutaActual != null && rutaActual.size() > 1 && mostrarRutaActual) {
                 g2.setColor(new Color(244, 67, 54));
                 g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
@@ -476,15 +463,14 @@ public class MapaRuta extends JFrame {
                 }
             }
 
-            // Dibujar nodos
             for (Nodo nodo : grafo.getNodos()) {
                 int x = (int) (nodo.getX() * scaleX);
                 int y = (int) (nodo.getY() * scaleY);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
-                // Cambiar la apariencia de los nodos que tienen escaleras si está activado el modo evitar escaleras
+                
                 if (mostrarEscaleras && nodo.tieneEscalera()) {
-                    g2.setColor(new Color(255, 69, 0)); // Rojo naranja para nodos con escaleras
+                    g2.setColor(new Color(255, 69, 0)); 
                     g2.fillRoundRect(x - 24, y - 24, 48, 48, 12, 12);
                     g2.setColor(new Color(33, 33, 33));
                     g2.setStroke(new BasicStroke(2));

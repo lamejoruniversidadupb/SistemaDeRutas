@@ -5,7 +5,7 @@ public class Arista {
     private final String destino;
     private final int distancia;
     private final boolean tieneEscaleras; 
-    private final boolean esAccesible; // 
+    private final boolean esAccesible;  
 
     public Arista(String origen, String destino, int distancia) {
         this(origen, destino, distancia, false, true);
