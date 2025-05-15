@@ -15,9 +15,9 @@ public class MapaRuta extends JFrame {
     private final Grafos grafo;
     private ListaEnlazada<String> rutaActual;
     private GrafoPanel panelGrafo;
-    private boolean mostrarRutaActual = true; 
-    private boolean evitarEscalerasActivo = false; 
-    private JToggleButton evitarEscalerasBtn; 
+    private boolean mostrarRutaActual = true;
+    private boolean evitarEscalerasActivo = false;
+    private JToggleButton evitarEscalerasBtn;
 
     public MapaRuta() {
         setTitle("Sistema de Rutas UPB");
@@ -30,7 +30,6 @@ public class MapaRuta extends JFrame {
         Container container = getContentPane();
         container.setLayout(new BorderLayout());
 
-        
         JPanel backgroundPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -42,8 +41,7 @@ public class MapaRuta extends JFrame {
         };
         backgroundPanel.setLayout(new BorderLayout());
 
-   
-        JPanel panelSuperior = new JPanel(new GridLayout(2, 5, 15, 15)); 
+        JPanel panelSuperior = new JPanel(new GridLayout(2, 5, 15, 15));
         panelSuperior.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         panelSuperior.setBackground(new Color(255, 255, 255, 230));
 
@@ -76,11 +74,38 @@ public class MapaRuta extends JFrame {
         evitarEscalerasBtn = new JToggleButton("Evitar Escaleras");
         styleToggleButton(evitarEscalerasBtn);
         evitarEscalerasBtn.setPreferredSize(new Dimension(150, 40));
-        evitarEscalerasBtn.setEnabled(true); 
+        evitarEscalerasBtn.setEnabled(true);
+
+        // Configurar color naranja para el toggle button
+        evitarEscalerasBtn.setBackground(new Color(255, 140, 0));
+        evitarEscalerasBtn.setForeground(Color.WHITE);
+        evitarEscalerasBtn.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        evitarEscalerasBtn.setFocusPainted(false);
+        evitarEscalerasBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        evitarEscalerasBtn.setBorder(BorderFactory.createLineBorder(new Color(204, 85, 0), 2, true));
+        evitarEscalerasBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                evitarEscalerasBtn.setBackground(new Color(204, 85, 0));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (evitarEscalerasBtn.isSelected()) {
+                    evitarEscalerasBtn.setBackground(new Color(153, 69, 0));
+                } else {
+                    evitarEscalerasBtn.setBackground(new Color(255, 140, 0));
+                }
+            }
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                if (evitarEscalerasBtn.isSelected()) {
+                    evitarEscalerasBtn.setBackground(new Color(153, 69, 0));
+                } else {
+                    evitarEscalerasBtn.setBackground(new Color(255, 140, 0));
+                }
+            }
+        });
 
         calcularBtn.addActionListener(new CalcularRutaListener());
         agregarEdificioBtn.addActionListener(e -> agregarEdificio());
-        eliminarEdificioBtn.addActionListener(e -> eliminarEdificioDeRuta());
+        eliminarEdificioBtn.addActionListener(e -> eliminarEdificioDeRutaRecalcular());
         reiniciarRutaBtn.addActionListener(e -> reiniciarRuta());
         evitarEscalerasBtn.addActionListener(e -> toggleEvitarEscaleras());
 
@@ -159,28 +184,7 @@ public class MapaRuta extends JFrame {
     }
 
     private void styleToggleButton(JToggleButton toggleButton) {
-        toggleButton.setBackground(new Color(33, 150, 243));
-        toggleButton.setForeground(Color.WHITE);
-        toggleButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        toggleButton.setFocusPainted(false);
-        toggleButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        toggleButton.setBorder(BorderFactory.createLineBorder(new Color(25, 118, 210), 2, true));
-        toggleButton.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                toggleButton.setBackground(new Color(25, 118, 210));
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                toggleButton.setBackground(new Color(33, 150, 243));
-            }
-            public void mousePressed(java.awt.event.MouseEvent evt) {
-             
-                if (toggleButton.isSelected()) {
-                    toggleButton.setBackground(new Color(21, 101, 192));
-                } else {
-                    toggleButton.setBackground(new Color(33, 150, 243));
-                }
-            }
-        });
+        // Custom styling done in constructor
     }
 
     private void addHoverEffect(JButton button) {
@@ -203,19 +207,14 @@ public class MapaRuta extends JFrame {
         if (inicio == null || destino == null) {
             return;
         }
+        rutaActual = grafo.obtenerRuta(inicio, destino, evitarEscalerasActivo);
 
-        if (evitarEscalerasActivo) {
-            rutaActual = grafo.dijkstraEvitarEscaleras(inicio, destino);
-            if (rutaActual == null || rutaActual.size() == 0) {
-                
-                rutaActual = grafo.dijkstra(inicio, destino);
-                resultadoArea.setText("No fue posible evitar escaleras, mostrando ruta con escaleras:\n");
-            } else {
-                resultadoArea.setText("Mostrando ruta evitando escaleras:\n");
-            }
+        if ((rutaActual == null || rutaActual.size() == 0) && evitarEscalerasActivo) {
+            rutaActual = grafo.obtenerRuta(inicio, destino, false);
+            resultadoArea.setText("No fue posible evitar escaleras, mostrando ruta con escaleras:\n");
+        } else if (evitarEscalerasActivo) {
+            resultadoArea.setText("Mostrando ruta evitando escaleras:\n");
         } else {
-            
-            rutaActual = grafo.dijkstra(inicio, destino);
             resultadoArea.setText("");
         }
 
@@ -223,7 +222,7 @@ public class MapaRuta extends JFrame {
             resultadoArea.setText("No se encontró ruta entre " + inicio + " y " + destino);
             distanciaLabel.setText("Distancia total: 0 pasos");
         } else {
-            mostrarRutasConAlternativas(rutaActual);
+            mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo);
         }
         panelGrafo.setMostrarEscaleras(evitarEscalerasActivo);
         panelGrafo.setRutaActual(rutaActual);
@@ -238,25 +237,24 @@ public class MapaRuta extends JFrame {
             String destino = (String) destinoCombo.getSelectedItem();
 
             if (inicio != null && destino != null) {
-                if (evitarEscalerasActivo) {
-                    rutaActual = grafo.dijkstraEvitarEscaleras(inicio, destino);
-                    if (rutaActual == null || rutaActual.size() == 0) {
-                        rutaActual = grafo.dijkstra(inicio, destino);
-                        resultadoArea.setText("No fue posible evitar escaleras, mostrando ruta con escaleras:\n");
-                    } else {
-                        resultadoArea.setText("Mostrando ruta evitando escaleras:\n");
-                    }
+                rutaActual = grafo.obtenerRuta(inicio, destino, evitarEscalerasActivo);
+
+                if ((rutaActual == null || rutaActual.size() == 0) && evitarEscalerasActivo) {
+                    rutaActual = grafo.obtenerRuta(inicio, destino, false);
+                    resultadoArea.setText("No fue posible evitar escaleras, mostrando ruta con escaleras:\n");
+                } else if (evitarEscalerasActivo) {
+                    resultadoArea.setText("Mostrando ruta evitando escaleras:\n");
                 } else {
-                    rutaActual = grafo.dijkstra(inicio, destino);
                     resultadoArea.setText("");
                 }
+
                 mostrarRutaActual = true;
 
                 if (rutaActual == null || rutaActual.size() == 0) {
                     resultadoArea.setText("No se encontró ruta entre " + inicio + " y " + destino);
                     distanciaLabel.setText("Distancia total: 0 pasos");
                 } else {
-                    mostrarRutasConAlternativas(rutaActual);
+                    mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo);
                 }
                 panelGrafo.setMostrarEscaleras(evitarEscalerasActivo);
                 panelGrafo.setRutaActual(rutaActual);
@@ -266,31 +264,24 @@ public class MapaRuta extends JFrame {
     }
 
     private void reiniciarRuta() {
-    
-    inicioCombo.setSelectedIndex(0); 
-    destinoCombo.setSelectedIndex(0); 
+        inicioCombo.setSelectedIndex(0);
+        destinoCombo.setSelectedIndex(0);
+        resultadoArea.setText("");
+        distanciaLabel.setText("Distancia total: 0 pasos");
+        rutaActual = new ListaEnlazada<>();
+        panelGrafo.setRutaActual(rutaActual);
+        panelGrafo.repaint();
+    }
 
-    
-    resultadoArea.setText("");
-    distanciaLabel.setText("Distancia total: 0 pasos");
-
-    
-    rutaActual = new ListaEnlazada<>(); 
-
-
-    panelGrafo.setRutaActual(rutaActual);
-    panelGrafo.repaint();
-}
-
-
-    private void mostrarRutasConAlternativas(ListaEnlazada<String> rutaPrincipal) {
+    private void mostrarRutasConAlternativas(ListaEnlazada<String> rutaPrincipal, boolean evitarEscaleras) {
         if (rutaPrincipal == null || rutaPrincipal.size() == 0) {
             resultadoArea.setText("");
             distanciaLabel.setText("Distancia total: 0 pasos");
             return;
         }
+
         StringBuilder sb = new StringBuilder();
-        double distanciaTotal = 0.0;
+        int distanciaTotal = 0;
 
         sb.append("Ruta más corta:\n");
         for (int i = 0; i < rutaPrincipal.size() - 1; i++) {
@@ -304,14 +295,23 @@ public class MapaRuta extends JFrame {
         }
         sb.append(rutaPrincipal.get(rutaPrincipal.size() - 1)).append("\n\n");
 
+        sb.append("Distancia total: ").append(distanciaTotal).append(" pasos\n\n");
+
         sb.append("Rutas alternativas nodo a nodo:\n");
         for (int i = 0; i < rutaPrincipal.size() - 1; i++) {
             String nodoOrigen = rutaPrincipal.get(i);
             String nodoDestino = rutaPrincipal.get(i + 1);
-            
-            ListaEnlazada<String> rutaAlternativa = grafo.dijkstraAlternativo(nodoOrigen, nodoDestino, rutaPrincipal);
+
+            ListaEnlazada<String> rutaAlternativa = grafo.obtenerRutaAlternativa(nodoOrigen, nodoDestino, rutaPrincipal, evitarEscaleras);
             if (rutaAlternativa != null && rutaAlternativa.size() > 1) {
-                sb.append("De ").append(nodoOrigen).append(" a ").append(nodoDestino).append(": ");
+                int distanciaAlternativa = 0;
+                for (int j = 0; j < rutaAlternativa.size() - 1; j++) {
+                    Arista aristaAlt = grafo.getArista(rutaAlternativa.get(j), rutaAlternativa.get(j + 1));
+                    if (aristaAlt != null)
+                        distanciaAlternativa += aristaAlt.getDistancia();
+                }
+                sb.append("De ").append(nodoOrigen).append(" a ").append(nodoDestino)
+                  .append(" (alternativa ").append(distanciaAlternativa).append(" pasos): ");
                 for (int j = 0; j < rutaAlternativa.size() - 1; j++) {
                     sb.append(rutaAlternativa.get(j)).append(" -> ");
                 }
@@ -321,7 +321,7 @@ public class MapaRuta extends JFrame {
             }
         }
         resultadoArea.setText(sb.toString());
-        distanciaLabel.setText("Distancia total: " + (int) distanciaTotal + " pasos");
+        distanciaLabel.setText("Distancia total: " + distanciaTotal + " pasos");
     }
 
     private void agregarEdificio() {
@@ -348,7 +348,7 @@ public class MapaRuta extends JFrame {
                     destinoCombo.addItem(nombre);
                 }
                 rutaActual.agregar(nombre);
-                mostrarRutasConAlternativas(rutaActual);
+                mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo);
                 mostrarRutaActual = true;
                 panelGrafo.setRutaActual(rutaActual);
                 panelGrafo.repaint();
@@ -356,7 +356,7 @@ public class MapaRuta extends JFrame {
         }
     }
 
-    private void eliminarEdificioDeRuta() {
+    private void eliminarEdificioDeRutaRecalcular() {
         if (rutaActual == null || rutaActual.size() == 0) {
             JOptionPane.showMessageDialog(this, "Primero calcula una ruta.");
             return;
@@ -374,10 +374,60 @@ public class MapaRuta extends JFrame {
 
         if (nodoAEliminar != null) {
             rutaActual.eliminar(nodoAEliminar);
-            mostrarRutasConAlternativas(rutaActual);
-            mostrarRutaActual = true;
+
+            if (rutaActual.size() < 2) {
+                resultadoArea.setText("Ruta demasiado corta para recalcular tras eliminar.");
+                distanciaLabel.setText("Distancia total: 0 pasos");
+                panelGrafo.setRutaActual(rutaActual);
+                panelGrafo.repaint();
+                return;
+            }
+
+            String inicio = rutaActual.get(0);
+            String destino = rutaActual.get(rutaActual.size() - 1);
+
+            ListaEnlazada<String> rutaCompleta = new ListaEnlazada<>();
+            boolean rutaValida = true;
+
+            for (int i = 0; i < rutaActual.size() - 1; i++) {
+                String desde = rutaActual.get(i);
+                String hasta = rutaActual.get(i + 1);
+
+                ListaEnlazada<String> subRuta = grafo.obtenerRuta(desde, hasta, evitarEscalerasActivo);
+
+                if (subRuta == null || subRuta.size() == 0) {
+                    subRuta = grafo.obtenerRuta(desde, hasta, false);
+                    if (subRuta == null || subRuta.size() == 0) {
+                        rutaValida = false;
+                        break;
+                    }
+                }
+
+                if (rutaCompleta.size() > 0) {
+                    for (int j = 1; j < subRuta.size(); j++) {
+                        rutaCompleta.agregar(subRuta.get(j));
+                    }
+                } else {
+                    for (int j = 0; j < subRuta.size(); j++) {
+                        rutaCompleta.agregar(subRuta.get(j));
+                    }
+                }
+            }
+
+            if (rutaValida) {
+                rutaActual = rutaCompleta;
+                mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo);
+                resultadoArea.append("Ruta recalculada tras eliminar edificio " + nodoAEliminar + "\n");
+            } else {
+                resultadoArea.setText("No fue posible recalcular ruta tras eliminar el edificio " + nodoAEliminar);
+                distanciaLabel.setText("Distancia total: 0 pasos");
+                rutaActual = new ListaEnlazada<>();
+            }
+
+            panelGrafo.setMostrarEscaleras(evitarEscalerasActivo);
             panelGrafo.setRutaActual(rutaActual);
             panelGrafo.repaint();
+            mostrarRutaActual = true;
         }
     }
 
@@ -395,11 +445,10 @@ public class MapaRuta extends JFrame {
 
         public void setRutaActual(ListaEnlazada<String> ruta) {
             this.rutaActual = ruta;
-           
             rutasAlternativas.clear();
             if (ruta != null) {
                 for (int i = 0; i < ruta.size() - 1; i++) {
-                    ListaEnlazada<String> alt = grafo.dijkstraAlternativo(ruta.get(i), ruta.get(i + 1), ruta);
+                    ListaEnlazada<String> alt = grafo.obtenerRutaAlternativa(ruta.get(i), ruta.get(i+1), ruta, mostrarEscaleras);
                     if (alt != null && alt.size() > 1) {
                         rutasAlternativas.add(alt);
                     } else {
@@ -423,7 +472,7 @@ public class MapaRuta extends JFrame {
             double scaleX = size.width / 400.0;
             double scaleY = size.height / 500.0;
 
-            
+            // Dibujar todas las aristas en gris claro
             g2.setColor(new Color(100, 100, 100, 150));
             g2.setStroke(new BasicStroke(2));
             for (Arista arista : grafo.getAristas()) {
@@ -433,10 +482,25 @@ public class MapaRuta extends JFrame {
                     g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY), (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
             }
 
-            
+            // Dibujar línea naranja entre nodos con escaleras (solo una vez por arista)
+            g2.setColor(new Color(255, 140, 0)); // naranja
+            g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            for (Arista arista : grafo.getAristas()) {
+                Nodo n1 = grafo.getNodo(arista.getOrigen());
+                Nodo n2 = grafo.getNodo(arista.getDestino());
+                if (n1 != null && n2 != null) {
+                    if (n1.tieneEscalera() && n2.tieneEscalera()) {
+                        if (arista.getOrigen().compareTo(arista.getDestino()) < 0) {
+                            g2.drawLine((int)(n1.getX()*scaleX), (int)(n1.getY()*scaleY), (int)(n2.getX()*scaleX), (int)(n2.getY()*scaleY));
+                        }
+                    }
+                }
+            }
+
+            // Dibujar rutas alternativas en azul más notorio
             if (rutasAlternativas != null) {
-                g2.setColor(new Color(33, 150, 243, 180)); 
-                g2.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.setColor(new Color(30, 136, 229, 220)); // azul intenso y más opaco
+                g2.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
                 for (ListaEnlazada<String> altRuta : rutasAlternativas) {
                     if (altRuta != null && altRuta.size() > 1) {
                         for (int i = 0; i < altRuta.size() - 1; i++) {
@@ -445,13 +509,23 @@ public class MapaRuta extends JFrame {
                             if (n1 != null && n2 != null) {
                                 g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY),
                                             (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
+                                Arista arista = grafo.getArista(altRuta.get(i), altRuta.get(i+1));
+                                if (arista != null) {
+                                    int px = (int)((n1.getX() + n2.getX()) * scaleX / 2);
+                                    int py = (int)((n1.getY() + n2.getY()) * scaleY / 2);
+                                    String distStr = String.valueOf(arista.getDistancia());
+                                    g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                                    g2.setColor(new Color(30, 136, 229, 220));
+                                    g2.drawString(distStr, px - g2.getFontMetrics().stringWidth(distStr)/2, py - 5);
+                                    g2.setColor(new Color(30, 136, 229, 220));
+                                }
                             }
                         }
                     }
                 }
             }
 
-            
+            // Dibujar ruta actual en rojo
             if (rutaActual != null && rutaActual.size() > 1 && mostrarRutaActual) {
                 g2.setColor(new Color(244, 67, 54));
                 g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
@@ -463,19 +537,13 @@ public class MapaRuta extends JFrame {
                 }
             }
 
+            // Dibujar nodos
             for (Nodo nodo : grafo.getNodos()) {
                 int x = (int) (nodo.getX() * scaleX);
                 int y = (int) (nodo.getY() * scaleY);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
-                
-                if (mostrarEscaleras && nodo.tieneEscalera()) {
-                    g2.setColor(new Color(255, 69, 0)); 
-                    g2.fillRoundRect(x - 24, y - 24, 48, 48, 12, 12);
-                    g2.setColor(new Color(33, 33, 33));
-                    g2.setStroke(new BasicStroke(2));
-                    g2.drawRoundRect(x - 24, y - 24, 48, 48, 12, 12);
-                } else if (nodo.getNombre().equals("CAFETERIA") || nodo.getNombre().equals("PORTERIA")) {
+                if (nodo.getNombre().equals("CAFETERIA") || nodo.getNombre().equals("PORTERIA")) {
                     g2.setColor(new Color(210, 210, 210, 180));
                     g2.fillRoundRect(x - 34, y - 24, 68, 48, 15, 15);
                     g2.setColor(new Color(33, 150, 243));
@@ -496,19 +564,5 @@ public class MapaRuta extends JFrame {
             }
         }
     }
-
-    public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(new FlatLightLaf());
-        } catch (UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
-        }
-
-        SwingUtilities.invokeLater(() -> {
-            MapaRuta frame = new MapaRuta();
-            frame.setVisible(true);
-        });
-    }
 }
-
 

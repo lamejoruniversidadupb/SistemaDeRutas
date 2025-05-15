@@ -41,7 +41,6 @@ public class Grafos {
         conectar("J", "D", 40);
         conectar("D", "E", 40);
         conectar("D", "G", 25);
-        conectar("D", "K", 150);
         conectar("D", "K", 50);
         conectar("E", "F", 10);
         conectar("E", "I", 60);
@@ -68,8 +67,89 @@ public class Grafos {
         aristas.agregar(new Arista(b, a, distancia));
     }
 
+    /**
+     * Método general para obtener ruta según flag evitarEscaleras.
+     * Si evitarEscaleras es true usar el algoritmo que excluye nodos con escaleras.
+     * Si es false, usa ruta normal.
+     */
+    public ListaEnlazada<String> obtenerRuta(String inicio, String destino, boolean evitarEscaleras) {
+        if (evitarEscaleras) {
+            return dijkstraEvitarEscaleras(inicio, destino);
+        } else {
+            return dijkstra(inicio, destino);
+        }
+    }
+
+    /**
+     * Obtiene rutas alternativas (si existen) que no sean iguales a la principal
+     * Si evitarEscaleras es true, la ruta alternativa tampoco debe usar nodos con escaleras.
+     */
+    public ListaEnlazada<String> obtenerRutaAlternativa(String inicio, String destino, ListaEnlazada<String> rutaPrincipal, boolean evitarEscaleras) {
+        distancias.clear();
+        ListaEnlazada<String> nodosPorVisitar = new ListaEnlazada<>();
+        ListaEnlazada<String> nodosVisitados = new ListaEnlazada<>();
+        ListaEnlazada<String> rutaAlternativa = new ListaEnlazada<>();
+
+        // Obtener nodos válidos según evitarEscaleras
+        ListaEnlazada<String> nodosValidos = new ListaEnlazada<>();
+        for (Nodo nodo : nodos) {
+            if (evitarEscaleras) {
+                if (nodo.getNombre().equals(inicio) || nodo.getNombre().equals(destino) || !estaEnEscalera(nodo.getNombre())) {
+                    nodosValidos.agregar(nodo.getNombre());
+                }
+            } else {
+                nodosValidos.agregar(nodo.getNombre());
+            }
+        }
+
+        for (String nodoNombre : nodosValidos) {
+            int distancia = nodoNombre.equals(inicio) ? 0 : Integer.MAX_VALUE;
+            distancias.agregar(new DistanciaNodo(nodoNombre, distancia, null));
+            nodosPorVisitar.agregar(nodoNombre);
+        }
+
+        while (nodosPorVisitar.size() > 0) {
+            DistanciaNodo actual = obtenerMenorDistancia(distancias, nodosPorVisitar);
+            if (actual == null) break;
+
+            nodosVisitados.agregar(actual.nombre);
+            eliminarDeLista(nodosPorVisitar, actual.nombre);
+
+            for (Arista arista : aristas) {
+                if (arista.getOrigen().equals(actual.nombre)) {
+                    String vecino = arista.getDestino();
+                    if (nodosValidos.contiene(vecino) && !contiene(nodosVisitados, vecino)) {
+                        // Evitar que arista esté en ruta principal para forzar alternativa
+                        if (!estaEnRutaPrincipal(arista, rutaPrincipal)) {
+                            int nuevaDistancia = actual.distancia == Integer.MAX_VALUE ?
+                                    Integer.MAX_VALUE : actual.distancia + arista.getDistancia();
+                            DistanciaNodo dnVecino = buscarDistancia(distancias, vecino);
+                            if (dnVecino != null && nuevaDistancia < dnVecino.distancia) {
+                                dnVecino.distancia = nuevaDistancia;
+                                dnVecino.anterior = actual.nombre;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        String actual = destino;
+        while (actual != null) {
+            rutaAlternativa.insertarInicio(actual);
+            DistanciaNodo dn = buscarDistancia(distancias, actual);
+            actual = (dn != null) ? dn.anterior : null;
+        }
+
+        if (rutaAlternativa.size() > 0 && rutaAlternativa.get(0).equals(inicio) && !rutaIgual(rutaAlternativa, rutaPrincipal)) {
+            return rutaAlternativa;
+        } else {
+            return null;
+        }
+    }
+
     public ListaEnlazada<String> dijkstra(String inicio, String destino) {
-        distancias.clear(); 
+        distancias.clear();
         ListaEnlazada<String> nodosPorVisitar = new ListaEnlazada<>();
         ListaEnlazada<String> nodosVisitados = new ListaEnlazada<>();
         ListaEnlazada<String> ruta = new ListaEnlazada<>();
@@ -91,7 +171,8 @@ public class Grafos {
                 if (arista.getOrigen().equals(actual.nombre)) {
                     String vecino = arista.getDestino();
                     if (!contiene(nodosVisitados, vecino)) {
-                        int nuevaDistancia = (actual.distancia == Integer.MAX_VALUE ? Integer.MAX_VALUE : actual.distancia + arista.getDistancia());
+                        int nuevaDistancia = actual.distancia == Integer.MAX_VALUE ?
+                                Integer.MAX_VALUE : actual.distancia + arista.getDistancia();
                         DistanciaNodo dnVecino = buscarDistancia(distancias, vecino);
                         if (dnVecino != null && nuevaDistancia < dnVecino.distancia) {
                             dnVecino.distancia = nuevaDistancia;
@@ -117,17 +198,22 @@ public class Grafos {
     }
 
     public ListaEnlazada<String> dijkstraEvitarEscaleras(String inicio, String destino) {
-        distancias.clear(); 
+        distancias.clear();
         ListaEnlazada<String> nodosPorVisitar = new ListaEnlazada<>();
         ListaEnlazada<String> nodosVisitados = new ListaEnlazada<>();
         ListaEnlazada<String> ruta = new ListaEnlazada<>();
 
+        ListaEnlazada<String> nodosPermitidos = new ListaEnlazada<>();
         for (Nodo nodo : nodos) {
             if (nodo.getNombre().equals(inicio) || nodo.getNombre().equals(destino) || !estaEnEscalera(nodo.getNombre())) {
-                int distancia = nodo.getNombre().equals(inicio) ? 0 : Integer.MAX_VALUE;
-                distancias.agregar(new DistanciaNodo(nodo.getNombre(), distancia, null));
-                nodosPorVisitar.agregar(nodo.getNombre());
+                nodosPermitidos.agregar(nodo.getNombre());
             }
+        }
+
+        for (String nodoNombre : nodosPermitidos) {
+            int distancia = nodoNombre.equals(inicio) ? 0 : Integer.MAX_VALUE;
+            distancias.agregar(new DistanciaNodo(nodoNombre, distancia, null));
+            nodosPorVisitar.agregar(nodoNombre);
         }
 
         while (nodosPorVisitar.size() > 0) {
@@ -140,9 +226,9 @@ public class Grafos {
             for (Arista arista : aristas) {
                 if (arista.getOrigen().equals(actual.nombre)) {
                     String vecino = arista.getDestino();
-                    if (!contiene(nodosVisitados, vecino)
-                            && (vecino.equals(inicio) || vecino.equals(destino) || !estaEnEscalera(vecino))) {
-                        int nuevaDistancia = (actual.distancia == Integer.MAX_VALUE ? Integer.MAX_VALUE : actual.distancia + arista.getDistancia());
+                    if (nodosPermitidos.contiene(vecino) && !contiene(nodosVisitados, vecino)) {
+                        int nuevaDistancia = actual.distancia == Integer.MAX_VALUE ?
+                                Integer.MAX_VALUE : actual.distancia + arista.getDistancia();
                         DistanciaNodo dnVecino = buscarDistancia(distancias, vecino);
                         if (dnVecino != null && nuevaDistancia < dnVecino.distancia) {
                             dnVecino.distancia = nuevaDistancia;
@@ -167,64 +253,19 @@ public class Grafos {
         }
     }
 
-    public ListaEnlazada<String> dijkstraAlternativo(String inicio, String destino, ListaEnlazada<String> rutaPrincipal) {
-        distancias.clear(); 
-        ListaEnlazada<String> nodosPorVisitar = new ListaEnlazada<>();
-        ListaEnlazada<String> nodosVisitados = new ListaEnlazada<>();
-        ListaEnlazada<String> ruta = new ListaEnlazada<>();
-
-        for (Nodo nodo : nodos) {
-            int distancia = nodo.getNombre().equals(inicio) ? 0 : Integer.MAX_VALUE;
-            distancias.agregar(new DistanciaNodo(nodo.getNombre(), distancia, null));
-            nodosPorVisitar.agregar(nodo.getNombre());
-        }
-
-        while (nodosPorVisitar.size() > 0) {
-            DistanciaNodo actual = obtenerMenorDistancia(distancias, nodosPorVisitar);
-            if (actual == null) break;
-
-            nodosVisitados.agregar(actual.nombre);
-            eliminarDeLista(nodosPorVisitar, actual.nombre);
-
-            for (Arista arista : aristas) {
-                if (arista.getOrigen().equals(actual.nombre)) {
-                    String vecino = arista.getDestino();
-                    if (!contiene(nodosVisitados, vecino)) {
-                        if (!estaEnRutaPrincipal(arista, rutaPrincipal)) {
-                            int nuevaDistancia = (actual.distancia == Integer.MAX_VALUE ? Integer.MAX_VALUE : actual.distancia + arista.getDistancia());
-                            DistanciaNodo dnVecino = buscarDistancia(distancias, vecino);
-                            if (dnVecino != null && nuevaDistancia < dnVecino.distancia) {
-                                dnVecino.distancia = nuevaDistancia;
-                                dnVecino.anterior = actual.nombre;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        String actual = destino;
-        while (actual != null) {
-            ruta.insertarInicio(actual);
-            DistanciaNodo dn = buscarDistancia(distancias, actual);
-            actual = (dn != null) ? dn.anterior : null;
-        }
-
-        if (ruta.size() > 0 && ruta.get(0).equals(inicio) && !rutaIgual(ruta, rutaPrincipal)) {
-            return ruta;
-        } else {
-            return null;
-        }
-    }
-
     private boolean estaEnEscalera(String nodo) {
-        String n = nodo.toUpperCase();
-        if (n.equals("PORTERIA") || n.equals("J")) return true;
-        if (n.equals("B") || n.equals("CAFETERIA")) return true;
-        if (n.equals("J") || n.equals("D")) return true;
-        if (n.equals("D") || n.equals("K")) return true;
-        if (n.equals("I") || n.equals("K")) return true;
-        return false;
+        switch (nodo.toUpperCase()) {
+            case "PORTERIA":
+            case "J":
+            case "B":
+            case "CAFETERIA":
+            case "D":
+            case "K":
+            case "I":
+                return true;
+            default:
+                return false;
+        }
     }
 
     private DistanciaNodo obtenerMenorDistancia(ListaEnlazada<DistanciaNodo> distancias, ListaEnlazada<String> porVisitar) {
@@ -250,28 +291,22 @@ public class Grafos {
         lista.agregarTodos(nueva);
     }
 
-    public void eliminarNodo(String nombreNodo) {
-        ListaEnlazada<Arista> aristasAEliminar = new ListaEnlazada<>();
-        for (Arista arista : aristas) {
-            if (arista.getOrigen().equals(nombreNodo) || arista.getDestino().equals(nombreNodo)) {
-                aristasAEliminar.agregar(arista);
-            }
+    private boolean estaEnRutaPrincipal(Arista arista, ListaEnlazada<String> rutaPrincipal) {
+        for (int i = 0; i < rutaPrincipal.size() - 1; i++) {
+            String origen = rutaPrincipal.get(i);
+            String destino = rutaPrincipal.get(i + 1);
+            if (arista.getOrigen().equals(origen) && arista.getDestino().equals(destino))
+                return true;
         }
+        return false;
+    }
 
-        for (Arista arista : aristasAEliminar) {
-            aristas.eliminar(arista);
+    private boolean rutaIgual(ListaEnlazada<String> ruta1, ListaEnlazada<String> ruta2) {
+        if (ruta1 == null || ruta2 == null || ruta1.size() != ruta2.size()) return false;
+        for (int i = 0; i < ruta1.size(); i++) {
+            if (!ruta1.get(i).equals(ruta2.get(i))) return false;
         }
-
-        Nodo nodoAEliminar = null;
-        for (Nodo nodo : nodos) {
-            if (nodo.getNombre().equals(nombreNodo)) {
-                nodoAEliminar = nodo;
-                break;
-            }
-        }
-        if (nodoAEliminar != null) {
-            nodos.eliminar(nodoAEliminar);
-        }
+        return true;
     }
 
     private boolean contiene(ListaEnlazada<String> lista, String valor) {
@@ -290,59 +325,32 @@ public class Grafos {
 
     public Nodo getNodo(String nombre) {
         for (Nodo nodo : nodos) {
-            if (nodo.getNombre().equals(nombre)) {
-                return nodo;
-            }
+            if (nodo.getNombre().equals(nombre)) return nodo;
         }
         return null;
     }
 
     public Arista getArista(String origen, String destino) {
         for (Arista arista : aristas) {
-            if (arista.getOrigen().equals(origen) && arista.getDestino().equals(destino)) {
-                return arista;
-            }
+            if (arista.getOrigen().equals(origen) && arista.getDestino().equals(destino)) return arista;
         }
         return null;
     }
 
     public int getPeso(String origen, String destino) {
         for (Arista arista : aristas) {
-            if (arista.getOrigen().equals(origen) && arista.getDestino().equals(destino)) {
+            if (arista.getOrigen().equals(origen) && arista.getDestino().equals(destino))
                 return arista.getDistancia();
-            }
         }
         return Integer.MAX_VALUE;
     }
 
-    private boolean estaEnRutaPrincipal(Arista arista, ListaEnlazada<String> rutaPrincipal) {
-        for (int i = 0; i < rutaPrincipal.size() - 1; i++) {
-            String origen = rutaPrincipal.get(i);
-            String destino = rutaPrincipal.get(i + 1);
-            if (arista.getOrigen().equals(origen) && arista.getDestino().equals(destino)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean rutaIgual(ListaEnlazada<String> ruta1, ListaEnlazada<String> ruta2) {
-        if (ruta1 == null || ruta2 == null) return false;
-        if (ruta1.size() != ruta2.size()) return false;
-        for (int i = 0; i < ruta1.size(); i++) {
-            if (!ruta1.get(i).equals(ruta2.get(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public ListaEnlazada<String> getNombresNodos() {
-        ListaEnlazada<String> nombresNodos = new ListaEnlazada<>();
+        ListaEnlazada<String> nombres = new ListaEnlazada<>();
         for (Nodo nodo : nodos) {
-            nombresNodos.agregar(nodo.getNombre());
+            nombres.agregar(nodo.getNombre());
         }
-        return nombresNodos;
+        return nombres;
     }
 
     public ListaEnlazada<Nodo> getNodos() {
@@ -358,14 +366,14 @@ public class Grafos {
     }
 
     public void actualizarInterfaz(JComboBox<String> comboBoxInicio, JComboBox<String> comboBoxDestino) {
-        DefaultComboBoxModel<String> modelInicio = new DefaultComboBoxModel<>();
-        DefaultComboBoxModel<String> modelDestino = new DefaultComboBoxModel<>();
+        DefaultComboBoxModel<String> modeloInicio = new DefaultComboBoxModel<>();
+        DefaultComboBoxModel<String> modeloDestino = new DefaultComboBoxModel<>();
         for (Nodo nodo : nodos) {
-            modelInicio.addElement(nodo.getNombre());
-            modelDestino.addElement(nodo.getNombre());
+            modeloInicio.addElement(nodo.getNombre());
+            modeloDestino.addElement(nodo.getNombre());
         }
-        comboBoxInicio.setModel(modelInicio);
-        comboBoxDestino.setModel(modelDestino);
+        comboBoxInicio.setModel(modeloInicio);
+        comboBoxDestino.setModel(modeloDestino);
     }
 
     private static class DistanciaNodo {
