@@ -1,6 +1,7 @@
 package rutas;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Grafos {
 
@@ -75,7 +76,16 @@ public class Grafos {
         }
     }
 
-    public ListaEnlazada<String> obtenerRutaAlternativa(String inicio, String destino, ListaEnlazada<String> rutaPrincipal, boolean evitarEscaleras) {
+    public ListaEnlazada<ListaEnlazada<String>> obtenerVariasRutasAlternativas(String inicio, String destino, ListaEnlazada<String> rutaPrincipal, boolean evitarEscaleras) {
+        ListaEnlazada<ListaEnlazada<String>> rutasAlternativas = new ListaEnlazada<>();
+        ListaEnlazada<String> alternativa = obtenerRutaAlternativa(inicio, destino, rutaPrincipal, evitarEscaleras);
+        if (alternativa != null) {
+            rutasAlternativas.agregar(alternativa);
+        }
+        return rutasAlternativas;
+    }
+
+    private ListaEnlazada<String> obtenerRutaAlternativa(String inicio, String destino, ListaEnlazada<String> rutaPrincipal, boolean evitarEscaleras) {
         distancias.clear();
         ListaEnlazada<String> nodosPorVisitar = new ListaEnlazada<>();
         ListaEnlazada<String> nodosVisitados = new ListaEnlazada<>();
@@ -130,15 +140,6 @@ public class Grafos {
         } else {
             return null;
         }
-    }
-
-    public ListaEnlazada<ListaEnlazada<String>> obtenerVariasRutasAlternativas(String inicio, String destino, ListaEnlazada<String> rutaPrincipal, boolean evitarEscaleras) {
-        ListaEnlazada<ListaEnlazada<String>> rutasAlternativas = new ListaEnlazada<>();
-        ListaEnlazada<String> alternativa = obtenerRutaAlternativa(inicio, destino, rutaPrincipal, evitarEscaleras);
-        if (alternativa != null) {
-            rutasAlternativas.agregar(alternativa);
-        }
-        return rutasAlternativas;
     }
 
     public ListaEnlazada<String> dijkstra(String inicio, String destino) {
@@ -347,3 +348,4 @@ public class Grafos {
         return nombres;
     }
 }
+

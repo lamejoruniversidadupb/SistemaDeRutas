@@ -5,17 +5,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-/**
- * Clase principal que representa la ventana para la visualización y cálculo de rutas en el mapa de la UPB.
- * Permite seleccionar puntos de inicio y destino, calcular rutas, mostrar rutas alternativas,
- * evitar escaleras, agregar y eliminar edificios en la ruta y visualizar todo gráficamente.
- */
 public class MapaRuta extends JFrame {
     private final JComboBox<String> inicioCombo;
     private final JComboBox<String> destinoCombo;
     private final JTextArea resultadoArea;
     private final JLabel distanciaLabel;
     private final JLabel distanciaAlternativaLabel;
+    private final JLabel mensajeLabel; 
     private final Grafos grafo;
     private ListaEnlazada<String> rutaActual;
     private GrafoPanel panelGrafo;
@@ -24,7 +20,6 @@ public class MapaRuta extends JFrame {
     private JToggleButton evitarEscalerasBtn;
 
     public MapaRuta() {
-        // Inicialización de componentes y configuración de la ventana
         setTitle("Sistema de Rutas UPB");
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -38,26 +33,43 @@ public class MapaRuta extends JFrame {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g;
-                GradientPaint gp = new GradientPaint(0, 0, Color.decode("#F5F5F5"), 0, getHeight(), Color.decode("#E0E0E0"));
+                GradientPaint gp = new GradientPaint(0, 0, Color.decode("#D3D3D3"), 0, getHeight(), Color.decode("#A9A9A9"));
                 g2d.setPaint(gp);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
             }
         };
         backgroundPanel.setLayout(new BorderLayout());
 
-        JPanel panelSuperior = new JPanel(new GridLayout(2, 5, 15, 15));
-        panelSuperior.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        JPanel panelSuperior = new JPanel();
+        panelSuperior.setLayout(new BoxLayout(panelSuperior, BoxLayout.Y_AXIS));
+        panelSuperior.setBorder(BorderFactory.createEmptyBorder(15, 20, 30, 20));
         panelSuperior.setBackground(new Color(255, 255, 255, 230));
 
+        JPanel panelRutas = new JPanel();
+        panelRutas.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        panelRutas.setOpaque(false);
+
+        JLabel labelInicio = new JLabel("Inicio:");
+        styleLabel(labelInicio);
         inicioCombo = new JComboBox<>();
+        styleComboBox(inicioCombo);
+        JLabel labelDestino = new JLabel("Destino:");
+        styleLabel(labelDestino);
         destinoCombo = new JComboBox<>();
+        styleComboBox(destinoCombo);
+
         for (String nodo : grafo.getNombresNodos()) {
             inicioCombo.addItem(nodo);
             destinoCombo.addItem(nodo);
         }
 
-        styleComboBox(inicioCombo);
-        styleComboBox(destinoCombo);
+        panelRutas.add(labelInicio);
+        panelRutas.add(inicioCombo);
+        panelRutas.add(labelDestino);
+        panelRutas.add(destinoCombo);
+
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
+        panelBotones.setOpaque(false);
 
         JButton calcularBtn = new JButton("Calcular Ruta");
         styleButton(calcularBtn);
@@ -107,25 +119,40 @@ public class MapaRuta extends JFrame {
         });
 
         calcularBtn.addActionListener(new CalcularRutaListener());
-        agregarEdificioBtn.addActionListener(e -> agregarEdificio());
-        eliminarEdificioBtn.addActionListener(e -> eliminarEdificioDeRutaRecalcular());
-        reiniciarRutaBtn.addActionListener(e -> reiniciarRuta());
-        evitarEscalerasBtn.addActionListener(e -> toggleEvitarEscaleras());
+        agregarEdificioBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                agregarEdificio();
+            }
+        });
+        eliminarEdificioBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                eliminarEdificioDeRutaRecalcular();
+            }
+        });
+        reiniciarRutaBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reiniciarRuta();
+            }
+        });
+        evitarEscalerasBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleEvitarEscaleras();
+            }
+        });
 
-        JLabel labelInicio = new JLabel("Inicio:");
-        JLabel labelDestino = new JLabel("Destino:");
-        styleLabel(labelInicio);
-        styleLabel(labelDestino);
+        panelBotones.add(calcularBtn);
+        panelBotones.add(agregarEdificioBtn);
+        panelBotones.add(eliminarEdificioBtn);
+        panelBotones.add(reiniciarRutaBtn);
+        panelBotones.add(evitarEscalerasBtn);
 
-        panelSuperior.add(labelInicio);
-        panelSuperior.add(inicioCombo);
-        panelSuperior.add(labelDestino);
-        panelSuperior.add(destinoCombo);
-        panelSuperior.add(calcularBtn);
-        panelSuperior.add(agregarEdificioBtn);
-        panelSuperior.add(eliminarEdificioBtn);
-        panelSuperior.add(reiniciarRutaBtn);
-        panelSuperior.add(evitarEscalerasBtn);
+        panelSuperior.add(panelRutas);
+        panelSuperior.add(Box.createVerticalStrut(10));
+        panelSuperior.add(panelBotones);
 
         backgroundPanel.add(panelSuperior, BorderLayout.NORTH);
         getContentPane().add(backgroundPanel, BorderLayout.NORTH);
@@ -146,6 +173,12 @@ public class MapaRuta extends JFrame {
         distanciaLabel.setForeground(new Color(33, 150, 243));
         distanciaLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        mensajeLabel = new JLabel("");
+        mensajeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        mensajeLabel.setForeground(new Color(33, 33, 33));
+        mensajeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mensajeLabel.setBorder(BorderFactory.createEmptyBorder(5,0,5,0));
+
         distanciaAlternativaLabel = new JLabel("Distancia rutas alternas: 0 pasos");
         distanciaAlternativaLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         distanciaAlternativaLabel.setForeground(new Color(30, 136, 229));
@@ -153,6 +186,7 @@ public class MapaRuta extends JFrame {
         distanciaAlternativaLabel.setBorder(BorderFactory.createEmptyBorder(10,0,0,0));
 
         panelDistancias.add(distanciaLabel);
+        panelDistancias.add(mensajeLabel);
         panelDistancias.add(distanciaAlternativaLabel);
 
         panelCentral.add(panelDistancias, BorderLayout.EAST);
@@ -181,6 +215,18 @@ public class MapaRuta extends JFrame {
         scrollPane.setPreferredSize(new Dimension(0, 150));
 
         getContentPane().add(scrollPane, BorderLayout.SOUTH);
+    }
+
+    private void reiniciarRuta() {
+        inicioCombo.setSelectedIndex(0);
+        destinoCombo.setSelectedIndex(0);
+        resultadoArea.setText("");
+        distanciaLabel.setText("Distancia ruta corta: 0 pasos");
+        distanciaAlternativaLabel.setText("Distancia rutas alternas: 0 pasos");
+        mensajeLabel.setText("");
+        rutaActual = new ListaEnlazada<>();
+        panelGrafo.setRutaActual(rutaActual);
+        panelGrafo.repaint();
     }
 
     private void styleComboBox(JComboBox<String> comboBox) {
@@ -239,6 +285,9 @@ public class MapaRuta extends JFrame {
 
         if (inicio == null || destino == null) {
             resultadoArea.setText("Por favor, seleccione un nodo de inicio y un nodo de destino.");
+            mensajeLabel.setText("");
+            distanciaLabel.setText("Distancia ruta corta: 0 pasos");
+            distanciaAlternativaLabel.setText("Distancia rutas alternas: 0 pasos");
             return;
         }
 
@@ -257,32 +306,23 @@ public class MapaRuta extends JFrame {
 
         if (rutaActual == null || rutaActual.size() == 0) {
             resultadoArea.setText("No se encontró ruta entre " + inicio + " y " + destino);
-            distanciaLabel.setText("Distancia total: 0 pasos");
+            distanciaLabel.setText("Distancia ruta corta: 0 pasos");
             distanciaAlternativaLabel.setText("Distancia rutas alternas: 0 pasos");
+            mensajeLabel.setText("");
         } else {
-            mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo);
+            mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo, inicio, destino);
         }
         panelGrafo.setMostrarEscaleras(evitarEscalerasActivo);
         panelGrafo.setRutaActual(rutaActual);
         panelGrafo.repaint();
     }
 
-    private void reiniciarRuta() {
-        inicioCombo.setSelectedIndex(0);
-        destinoCombo.setSelectedIndex(0);
-        resultadoArea.setText("");
-        distanciaLabel.setText("Distancia total: 0 pasos");
-        distanciaAlternativaLabel.setText("Distancia rutas alternas: 0 pasos");
-        rutaActual = new ListaEnlazada<>();
-        panelGrafo.setRutaActual(rutaActual);
-        panelGrafo.repaint();
-    }
-
-    private void mostrarRutasConAlternativas(ListaEnlazada<String> rutaPrincipal, boolean evitarEscaleras) {
+    private void mostrarRutasConAlternativas(ListaEnlazada<String> rutaPrincipal, boolean evitarEscaleras, String inicio, String destino) {
         if (rutaPrincipal == null || rutaPrincipal.size() == 0) {
             resultadoArea.setText("");
-            distanciaLabel.setText("Distancia total: 0 pasos");
-            distanciaAlternativaLabel.setText("Distancia rutas alternas: 0 pasos");
+            distanciaLabel.setText("Distancia ruta corta: 0 pasos");
+            distanciaAlternativaLabel.setText("<html>Distancia rutas alternas: 0 pasos</html>");
+            mensajeLabel.setText("");
             return;
         }
 
@@ -304,9 +344,12 @@ public class MapaRuta extends JFrame {
         }
         sb.append(rutaPrincipal.get(rutaPrincipal.size() - 1)).append("\n\n");
 
-        sb.append("Distancia total: ").append(distanciaTotal).append(" pasos\n\n");
+        sb.append("Distancia Ruta corta : ").append(distanciaTotal).append(" pasos\n\n");
 
         sb.append("Rutas alternativas nodo a nodo:\n");
+
+        StringBuilder distAlternativasHtml = new StringBuilder("<html>Distancia rutas alternas: ");
+
         for (int i = 0; i < rutaPrincipal.size() - 1; i++) {
             String nodoOrigen = rutaPrincipal.get(i);
             String nodoDestino = rutaPrincipal.get(i + 1);
@@ -314,7 +357,8 @@ public class MapaRuta extends JFrame {
             ListaEnlazada<ListaEnlazada<String>> variasAlternativas = grafo.obtenerVariasRutasAlternativas(nodoOrigen, nodoDestino, rutaPrincipal, evitarEscaleras);
 
             if (variasAlternativas != null && variasAlternativas.size() > 0) {
-                for (ListaEnlazada<String> rutaAlternativa : variasAlternativas) {
+                for (int altIndex = 0; altIndex < variasAlternativas.size(); altIndex++) {
+                    ListaEnlazada<String> rutaAlternativa = variasAlternativas.get(altIndex);
                     if (rutaAlternativa != null && rutaAlternativa.size() > 1) {
                         int distanciaAlternativa = 0;
                         for (int j = 0; j < rutaAlternativa.size() - 1; j++) {
@@ -324,23 +368,37 @@ public class MapaRuta extends JFrame {
                             }
                         }
                         distanciaRutasAlternasTotal += distanciaAlternativa;
+
                         sb.append("De ").append(nodoOrigen).append(" a ").append(nodoDestino)
                           .append(" (alternativa ").append(distanciaAlternativa).append(" pasos): ");
+
                         for (int j = 0; j < rutaAlternativa.size() - 1; j++) {
                             sb.append(rutaAlternativa.get(j)).append(" -> ");
                         }
                         sb.append(rutaAlternativa.get(rutaAlternativa.size() - 1)).append("\n");
+
+                        distAlternativasHtml.append("<br>De ").append(nodoOrigen).append(" a ").append(nodoDestino)
+                            .append(" alternativa ").append(altIndex + 1).append(": ").append(distanciaAlternativa).append(" pasos");
                     } else {
                         sb.append("De ").append(nodoOrigen).append(" a ").append(nodoDestino).append(": No hay alternativa\n");
+                        distAlternativasHtml.append("<br>De ").append(nodoOrigen).append(" a ").append(nodoDestino).append(": No hay alternativa");
                     }
                 }
             } else {
                 sb.append("De ").append(nodoOrigen).append(" a ").append(nodoDestino).append(": No hay alternativa\n");
+                distAlternativasHtml.append("<br>De ").append(nodoOrigen).append(" a ").append(nodoDestino).append(": No hay alternativa");
             }
         }
+        distAlternativasHtml.append("</html>");
+
         resultadoArea.setText(sb.toString());
-        distanciaLabel.setText("Distancia total: " + distanciaTotal + " pasos");
-        distanciaAlternativaLabel.setText("Distancia rutas alternas: " + distanciaRutasAlternasTotal + " pasos");
+        distanciaLabel.setText("Distancia ruta corta: " + distanciaTotal + " pasos");
+        distanciaAlternativaLabel.setText(distAlternativasHtml.toString());
+
+        String mensaje = String.format("<html>- Desde nodo %s hasta nodo %s hay %d pasos.<br>" +
+                "- De lo contrario, las rutas alternativas tienen una distancia total extra de %d pasos.</html> ",
+                inicio, destino, distanciaTotal, distanciaRutasAlternasTotal);
+        mensajeLabel.setText(mensaje);
     }
 
     private void agregarEdificio() {
@@ -350,30 +408,82 @@ public class MapaRuta extends JFrame {
         }
 
         String nombre = JOptionPane.showInputDialog(this, "Nombre del nuevo edificio:");
+
         if (nombre != null && !nombre.trim().isEmpty()) {
             String[] nodosEnRuta = new String[rutaActual.size()];
             for (int i = 0; i < rutaActual.size(); i++) {
                 nodosEnRuta[i] = rutaActual.get(i);
             }
 
-            String nodoSiguiente = (String) JOptionPane.showInputDialog(
-                    this, "Seleccione el nodo después del cual agregar el nuevo edificio:",
-                    "Agregar Edificio a la Ruta", JOptionPane.PLAIN_MESSAGE,
-                    null, nodosEnRuta, nodosEnRuta[0]);
+            JPanel panel = new JPanel(new BorderLayout(5, 5));
+            JComboBox<String> nodoCombo = new JComboBox<>(nodosEnRuta);
+            nodoCombo.setPreferredSize(new Dimension(200, 25));
+            panel.add(new JLabel("Seleccione el nodo después del cual agregar el nuevo edificio:"), BorderLayout.NORTH);
+            panel.add(nodoCombo, BorderLayout.CENTER);
 
-            if (nodoSiguiente != null) {
-                if (((DefaultComboBoxModel<String>) inicioCombo.getModel()).getIndexOf(nombre) == -1) {
-                    inicioCombo.addItem(nombre);
-                    destinoCombo.addItem(nombre);
+            int res = JOptionPane.showConfirmDialog(this, panel, "Agregar Edificio a la Ruta", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (res == JOptionPane.OK_OPTION) {
+                String nodoSeleccionado = (String) nodoCombo.getSelectedItem();
+                if (nodoSeleccionado != null) {
+                    if (((DefaultComboBoxModel<String>) inicioCombo.getModel()).getIndexOf(nombre) == -1) {
+                        inicioCombo.addItem(nombre);
+                        destinoCombo.addItem(nombre);
+                    }
+
+                    ListaEnlazada<String> rutaConNuevoNodo = new ListaEnlazada<>();
+
+                    int idxSeleccionado = rutaActual.indiceDe(nodoSeleccionado);
+
+                    for (int i = 0; i <= idxSeleccionado; i++) {
+                        rutaConNuevoNodo.agregar(rutaActual.get(i));
+                    }
+                    rutaConNuevoNodo.agregar(nombre);
+                    for (int i = idxSeleccionado + 1; i < rutaActual.size(); i++) {
+                        rutaConNuevoNodo.agregar(rutaActual.get(i));
+                    }
+
+                    ListaEnlazada<String> rutaFinalReconstruida = new ListaEnlazada<>();
+                    boolean rutaValida = true;
+
+                    for (int i = 0; i < rutaConNuevoNodo.size() - 1; i++) {
+                        String desde = rutaConNuevoNodo.get(i);
+                        String hasta = rutaConNuevoNodo.get(i + 1);
+
+                        ListaEnlazada<String> subRuta = grafo.obtenerRuta(desde, hasta, evitarEscalerasActivo);
+                        if (subRuta == null || subRuta.size() == 0) {
+                            subRuta = grafo.obtenerRuta(desde, hasta, false);
+                            if (subRuta == null || subRuta.size() == 0) {
+                                rutaValida = false;
+                                break;
+                            }
+                        }
+
+                        if (rutaFinalReconstruida.size() > 0) {
+                            for (int j = 1; j < subRuta.size(); j++) {
+                                rutaFinalReconstruida.agregar(subRuta.get(j));
+                            }
+                        } else {
+                            for (int j = 0; j < subRuta.size(); j++) {
+                                rutaFinalReconstruida.agregar(subRuta.get(j));
+                            }
+                        }
+                    }
+
+                    if (rutaValida) {
+                        rutaActual = rutaFinalReconstruida;
+                        mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo, (String)inicioCombo.getSelectedItem(), (String)destinoCombo.getSelectedItem());
+                        mostrarRutaActual = true;
+                        panelGrafo.setRutaActual(rutaActual);
+                        panelGrafo.repaint();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "No se pudo recalcular una ruta válida al agregar el edificio.");
+                    }
                 }
-                rutaActual.agregar(nombre);
-                mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo);
-                mostrarRutaActual = true;
-                panelGrafo.setRutaActual(rutaActual);
-                panelGrafo.repaint();
             }
         }
     }
+
+
 
     private void eliminarEdificioDeRutaRecalcular() {
         if (rutaActual == null || rutaActual.size() == 0) {
@@ -386,250 +496,262 @@ public class MapaRuta extends JFrame {
             nodosEnRuta[i] = rutaActual.get(i);
         }
 
-        String nodoAEliminar = (String) JOptionPane.showInputDialog(
-                this, "Seleccione el edificio a eliminar de la ruta:",
-                "Eliminar Edificio de la Ruta", JOptionPane.PLAIN_MESSAGE,
-                null, nodosEnRuta, nodosEnRuta[0]);
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        JComboBox<String> nodoCombo = new JComboBox<>(nodosEnRuta);
+        nodoCombo.setPreferredSize(new Dimension(200, 25));
+        panel.add(new JLabel("Seleccione el edificio a eliminar de la ruta:"), BorderLayout.NORTH);
+        panel.add(nodoCombo, BorderLayout.CENTER);
 
-        if (nodoAEliminar != null) {
-            rutaActual.eliminar(nodoAEliminar);
+        int res = JOptionPane.showConfirmDialog(this, panel, "Eliminar Edificio de la Ruta", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (res == JOptionPane.OK_OPTION) {
+            String nodoAEliminar = (String) nodoCombo.getSelectedItem();
+            if (nodoAEliminar != null) {
+                // Guardamos copia antes de modificar rutaActual
+                ListaEnlazada<String> rutaActualCopiada = new ListaEnlazada<>();
+                for (int i = 0; i < rutaActual.size(); i++) {
+                    rutaActualCopiada.agregar(rutaActual.get(i));
+                }
 
-            if (rutaActual.size() < 2) {
-                resultadoArea.setText("Ruta demasiado corta para recalcular tras eliminar.");
-                distanciaLabel.setText("Distancia total: 0 pasos");
-                distanciaAlternativaLabel.setText("Distancia rutas alternas: 0 pasos");
+                rutaActual.eliminar(nodoAEliminar);
+
+                if (rutaActual.size() < 2) {
+                    resultadoArea.setText("Ruta demasiado corta para recalcular tras eliminar.");
+                    distanciaLabel.setText("Distancia total: 0 pasos");
+                    distanciaAlternativaLabel.setText("Distancia rutas alternas: 0 pasos");
+                    mensajeLabel.setText("");
+                    panelGrafo.setRutaActual(rutaActual);
+                    panelGrafo.repaint();
+                    return;
+                }
+
+                String inicio = rutaActual.get(0);
+                String destino = rutaActual.get(rutaActual.size() - 1);
+
+                ListaEnlazada<String> rutaReconstruida = new ListaEnlazada<>();
+                boolean rutaValida = true;
+
+                // Construimos nueva ruta basada en subrutas entre nodos consecutivos en rutaActual ya sin nodo eliminado
+                for (int i = 0; i < rutaActual.size() - 1; i++) {
+                    String desde = rutaActual.get(i);
+                    String hasta = rutaActual.get(i + 1);
+
+                    ListaEnlazada<String> subRuta = grafo.obtenerRuta(desde, hasta, evitarEscalerasActivo);
+                    if (subRuta == null || subRuta.size() == 0) {
+                        subRuta = grafo.obtenerRuta(desde, hasta, false);
+                        if (subRuta == null || subRuta.size() == 0) {
+                            rutaValida = false;
+                            break;
+                        }
+                    }
+
+                    if (rutaReconstruida.size() > 0) {
+                        // Evitar repetir nodo intermedio
+                        for (int j = 1; j < subRuta.size(); j++) {
+                            rutaReconstruida.agregar(subRuta.get(j));
+                        }
+                    } else {
+                        for (int j = 0; j < subRuta.size(); j++) {
+                            rutaReconstruida.agregar(subRuta.get(j));
+                        }
+                    }
+                }
+
+                if (rutaValida) {
+                    rutaActual = rutaReconstruida;
+                    mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo, inicio, destino);
+                    resultadoArea.append("Ruta recalculada tras eliminar edificio " + nodoAEliminar + "\n");
+                } else {
+                    resultadoArea.setText("No fue posible recalcular ruta tras eliminar el edificio " + nodoAEliminar);
+                    distanciaLabel.setText("Distancia total: 0 pasos");
+                    distanciaAlternativaLabel.setText("Distancia rutas alternas: 0 pasos");
+                    mensajeLabel.setText("");
+                    rutaActual = new ListaEnlazada<>();
+                }
+
+                panelGrafo.setMostrarEscaleras(evitarEscalerasActivo);
                 panelGrafo.setRutaActual(rutaActual);
                 panelGrafo.repaint();
-                return;
+                mostrarRutaActual = true;
             }
+        }
+    }
 
-            String inicio = rutaActual.get(0);
-            String destino = rutaActual.get(rutaActual.size() - 1);
+    class GrafoPanel extends JPanel {
+        private final Grafos grafo;
+        private ListaEnlazada<String> rutaActual;
+        private java.util.List<ListaEnlazada<ListaEnlazada<String>>> rutasAlternativasPorArista;
+        private boolean mostrarEscaleras = false;
+        private boolean mostrarRutaActual = true;
+        private Image backgroundImage;
 
-            ListaEnlazada<String> rutaCompleta = new ListaEnlazada<>();
-            boolean rutaValida = true;
+        private final Color[] coloresRutasAlternativas = {
+            new Color(30, 136, 229, 220),
+            new Color(56, 142, 60, 220),
+            new Color(255, 193, 7, 220),
+            new Color(244, 67, 54, 180),
+            new Color(123, 31, 162, 220),
+        };
 
-            for (int i = 0; i < rutaActual.size() - 1; i++) {
-                String desde = rutaActual.get(i);
-                String hasta = rutaActual.get(i + 1);
+        public GrafoPanel(Grafos grafo, ListaEnlazada<String> rutaActual) {
+            this.grafo = grafo;
+            this.rutaActual = rutaActual;
+            this.rutasAlternativasPorArista = new java.util.ArrayList<>();
+            this.backgroundImage = new ImageIcon("/Users/andresnunez/Downloads/istockphoto-1407271745-612x612.jpg").getImage();
+        }
 
-                ListaEnlazada<String> subRuta = grafo.obtenerRuta(desde, hasta, evitarEscalerasActivo);
+        public void setRutaActual(ListaEnlazada<String> ruta) {
+            this.rutaActual = ruta;
+            rutasAlternativasPorArista.clear();
 
-                if (subRuta == null || subRuta.size() == 0) {
-                    subRuta = grafo.obtenerRuta(desde, hasta, false);
-                    if (subRuta == null || subRuta.size() == 0) {
-                        rutaValida = false;
-                        break;
+            if (ruta != null) {
+                for (int i = 0; i < ruta.size() - 1; i++) {
+                    ListaEnlazada<ListaEnlazada<String>> variasAlternativas =
+                        grafo.obtenerVariasRutasAlternativas(ruta.get(i), ruta.get(i + 1), ruta, mostrarEscaleras);
+
+                    if (variasAlternativas != null && variasAlternativas.size() > 0) {
+                        rutasAlternativasPorArista.add(variasAlternativas);
+                    } else {
+                        rutasAlternativasPorArista.add(null);
                     }
                 }
+            }
+        }
 
-                if (rutaCompleta.size() > 0) {
-                    for (int j = 1; j < subRuta.size(); j++) {
-                        rutaCompleta.agregar(subRuta.get(j));
-                    }
-                } else {
-                    for (int j = 0; j < subRuta.size(); j++) {
-                        rutaCompleta.agregar(subRuta.get(j));
-                    }
+        public void setMostrarEscaleras(boolean mostrarEscaleras) {
+            this.mostrarEscaleras = mostrarEscaleras;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+
+            Dimension size = getSize();
+            double scaleX = size.width / 400.0;
+            double scaleY = size.height / 500.0;
+
+            g2.setColor(new Color(100, 100, 100, 150));
+            g2.setStroke(new BasicStroke(2));
+            for (Arista arista : grafo.getAristas()) {
+                Nodo n1 = grafo.getNodo(arista.getOrigen());
+                Nodo n2 = grafo.getNodo(arista.getDestino());
+                if (n1 != null && n2 != null)
+                    g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY),
+                                (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
+            }
+
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            g2.setColor(new Color(80, 80, 80));
+            for (Arista arista : grafo.getAristas()) {
+                Nodo n1 = grafo.getNodo(arista.getOrigen());
+                Nodo n2 = grafo.getNodo(arista.getDestino());
+                if (n1 != null && n2 != null) {
+                    int x1 = (int) (n1.getX() * scaleX);
+                    int y1 = (int) (n1.getY() * scaleY);
+                    int x2 = (int) (n2.getX() * scaleX);
+                    int y2 = (int) (n2.getY() * scaleY);
+
+                    int mx = (x1 + x2) / 2;
+                    int my = (y1 + y2) / 2;
+
+                    String distStr = String.valueOf(arista.getDistancia());
+                    int strWidth = g2.getFontMetrics().stringWidth(distStr);
+                    g2.drawString(distStr, mx - strWidth / 2, my - 4);
                 }
             }
 
-            if (rutaValida) {
-                rutaActual = rutaCompleta;
-                mostrarRutasConAlternativas(rutaActual, evitarEscalerasActivo);
-                resultadoArea.append("Ruta recalculada tras eliminar edificio " + nodoAEliminar + "\n");
-            } else {
-                resultadoArea.setText("No fue posible recalcular ruta tras eliminar el edificio " + nodoAEliminar);
-                distanciaLabel.setText("Distancia total: 0 pasos");
-                distanciaAlternativaLabel.setText("Distancia rutas alternas: 0 pasos");
-                rutaActual = new ListaEnlazada<>();
-            }
-
-            panelGrafo.setMostrarEscaleras(evitarEscalerasActivo);
-            panelGrafo.setRutaActual(rutaActual);
-            panelGrafo.repaint();
-            mostrarRutaActual = true;
-        }
-    }
-}
-
-class GrafoPanel extends JPanel {
-    private final Grafos grafo;
-    private ListaEnlazada<String> rutaActual;
-    private java.util.List<ListaEnlazada<ListaEnlazada<String>>> rutasAlternativasPorArista;
-    private boolean mostrarEscaleras = false;
-    private boolean mostrarRutaActual = true;
-
-    private final Color[] coloresRutasAlternativas = {
-        new Color(30, 136, 229, 220),
-        new Color(56, 142, 60, 220),
-        new Color(255, 193, 7, 220),
-        new Color(244, 67, 54, 180),
-        new Color(123, 31, 162, 220),
-    };
-
-    public GrafoPanel(Grafos grafo, ListaEnlazada<String> rutaActual) {
-        this.grafo = grafo;
-        this.rutaActual = rutaActual;
-        this.rutasAlternativasPorArista = new java.util.ArrayList<>();
-    }
-
-    public void setRutaActual(ListaEnlazada<String> ruta) {
-        this.rutaActual = ruta;
-        rutasAlternativasPorArista.clear();
-
-        if (ruta != null) {
-            for (int i = 0; i < ruta.size() - 1; i++) {
-                ListaEnlazada<ListaEnlazada<String>> variasAlternativas =
-                    grafo.obtenerVariasRutasAlternativas(ruta.get(i), ruta.get(i + 1), ruta, mostrarEscaleras);
-
-                if (variasAlternativas != null && variasAlternativas.size() > 0) {
-                    rutasAlternativasPorArista.add(variasAlternativas);
-                } else {
-                    rutasAlternativasPorArista.add(null);
+            g2.setColor(new Color(255, 140, 0));
+            g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            for (Arista arista : grafo.getAristas()) {
+                Nodo n1 = grafo.getNodo(arista.getOrigen());
+                Nodo n2 = grafo.getNodo(arista.getDestino());
+                if (n1 != null && n2 != null &&
+                    n1.tieneEscalera() && n2.tieneEscalera() &&
+                    arista.getOrigen().compareTo(arista.getDestino()) < 0) {
+                    g2.drawLine((int)(n1.getX()*scaleX), (int)(n1.getY()*scaleY),
+                                (int)(n2.getX()*scaleX), (int)(n2.getY()*scaleY));
                 }
             }
-        }
-    }
 
-    public void setMostrarEscaleras(boolean mostrarEscaleras) {
-        this.mostrarEscaleras = mostrarEscaleras;
-    }
-
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        Dimension size = getSize();
-        double scaleX = size.width / 400.0;
-        double scaleY = size.height / 500.0;
-
-        // Dibujar aristas en gris claro
-        g2.setColor(new Color(100, 100, 100, 150));
-        g2.setStroke(new BasicStroke(2));
-        for (Arista arista : grafo.getAristas()) {
-            Nodo n1 = grafo.getNodo(arista.getOrigen());
-            Nodo n2 = grafo.getNodo(arista.getDestino());
-            if (n1 != null && n2 != null)
-                g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY),
-                            (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
-        }
-
-        // Dibujar distancias sobre las aristas
-        g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        g2.setColor(new Color(80, 80, 80));
-        for (Arista arista : grafo.getAristas()) {
-            Nodo n1 = grafo.getNodo(arista.getOrigen());
-            Nodo n2 = grafo.getNodo(arista.getDestino());
-            if (n1 != null && n2 != null) {
-                int x1 = (int) (n1.getX() * scaleX);
-                int y1 = (int) (n1.getY() * scaleY);
-                int x2 = (int) (n2.getX() * scaleX);
-                int y2 = (int) (n2.getY() * scaleY);
-
-                int mx = (x1 + x2) / 2;
-                int my = (y1 + y2) / 2;
-
-                String distStr = String.valueOf(arista.getDistancia());
-                int strWidth = g2.getFontMetrics().stringWidth(distStr);
-                g2.drawString(distStr, mx - strWidth / 2, my - 4);
-            }
-        }
-
-        // Dibujar escaleras
-        g2.setColor(new Color(255, 140, 0));
-        g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        for (Arista arista : grafo.getAristas()) {
-            Nodo n1 = grafo.getNodo(arista.getOrigen());
-            Nodo n2 = grafo.getNodo(arista.getDestino());
-            if (n1 != null && n2 != null &&
-                n1.tieneEscalera() && n2.tieneEscalera() &&
-                arista.getOrigen().compareTo(arista.getDestino()) < 0) {
-                g2.drawLine((int)(n1.getX()*scaleX), (int)(n1.getY()*scaleY),
-                            (int)(n2.getX()*scaleX), (int)(n2.getY()*scaleY));
-            }
-        }
-
-        // Dibujar rutas alternativas
-        for (int idxArista = 0; idxArista < rutasAlternativasPorArista.size(); idxArista++) {
-            ListaEnlazada<ListaEnlazada<String>> variasAlternativas = rutasAlternativasPorArista.get(idxArista);
-            if (variasAlternativas != null) {
-                for (int i = 0; i < variasAlternativas.size(); i++) {
-                    ListaEnlazada<String> altRuta = variasAlternativas.get(i);
-                    if (altRuta != null && altRuta.size() > 1) {
-                        Color colorAlt = coloresRutasAlternativas[i % coloresRutasAlternativas.length];
-                        g2.setColor(colorAlt);
-                        g2.setStroke(new BasicStroke(3 + i, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                        for (int j = 0; j < altRuta.size() - 1; j++) {
-                            Nodo n1 = grafo.getNodo(altRuta.get(j));
-                            Nodo n2 = grafo.getNodo(altRuta.get(j + 1));
-                            if (n1 != null && n2 != null) {
-                                g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY),
-                                            (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
-                                Arista arista = grafo.getArista(altRuta.get(j), altRuta.get(j+1));
-                                if (arista != null) {
-                                    int px = (int)((n1.getX() + n2.getX()) * scaleX / 2);
-                                    int py = (int)((n1.getY() + n2.getY()) * scaleY / 2);
-                                    String distStr = String.valueOf(arista.getDistancia());
-                                    g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
-                                    g2.setColor(colorAlt);
-                                    g2.drawString(distStr, px - g2.getFontMetrics().stringWidth(distStr)/2, py - 5);
+            for (int idxArista = 0; idxArista < rutasAlternativasPorArista.size(); idxArista++) {
+                ListaEnlazada<ListaEnlazada<String>> variasAlternativas = rutasAlternativasPorArista.get(idxArista);
+                if (variasAlternativas != null) {
+                    for (int i = 0; i < variasAlternativas.size(); i++) {
+                        ListaEnlazada<String> altRuta = variasAlternativas.get(i);
+                        if (altRuta != null && altRuta.size() > 1) {
+                            Color colorAlt = coloresRutasAlternativas[i % coloresRutasAlternativas.length];
+                            g2.setColor(colorAlt);
+                            g2.setStroke(new BasicStroke(3 + i, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                            for (int j = 0; j < altRuta.size() - 1; j++) {
+                                Nodo n1 = grafo.getNodo(altRuta.get(j));
+                                Nodo n2 = grafo.getNodo(altRuta.get(j + 1));
+                                if (n1 != null && n2 != null) {
+                                    g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY),
+                                                (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
+                                    Arista arista = grafo.getArista(altRuta.get(j), altRuta.get(j+1));
+                                    if (arista != null) {
+                                        int px = (int)((n1.getX() + n2.getX()) * scaleX / 2);
+                                        int py = (int)((n1.getY() + n2.getY()) * scaleY / 2);
+                                        String distStr = String.valueOf(arista.getDistancia());
+                                        g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                                        g2.setColor(colorAlt);
+                                        g2.drawString(distStr, px - g2.getFontMetrics().stringWidth(distStr)/2, py - 5);
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
-        // Dibujar ruta actual
-        if (rutaActual != null && rutaActual.size() > 1 && mostrarRutaActual) {
-            g2.setColor(new Color(244, 67, 54));
-            g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            for (int i = 0; i < rutaActual.size() - 1; i++) {
-                Nodo n1 = grafo.getNodo(rutaActual.get(i));
-                Nodo n2 = grafo.getNodo(rutaActual.get(i + 1));
-                if (n1 != null && n2 != null)
-                    g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY),
-                                (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
+            if (rutaActual != null && rutaActual.size() > 1 && mostrarRutaActual) {
+                g2.setColor(new Color(244, 67, 54));
+                g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                for (int i = 0; i < rutaActual.size() - 1; i++) {
+                    Nodo n1 = grafo.getNodo(rutaActual.get(i));
+                    Nodo n2 = grafo.getNodo(rutaActual.get(i + 1));
+                    if (n1 != null && n2 != null)
+                        g2.drawLine((int) (n1.getX() * scaleX), (int) (n1.getY() * scaleY),
+                                    (int) (n2.getX() * scaleX), (int) (n2.getY() * scaleY));
+                }
             }
-        }
 
-      
-        
-        for (Nodo nodo : grafo.getNodos()) {
-            int x = (int) (nodo.getX() * scaleX);
-            int y = (int) (nodo.getY() * scaleY);
-            g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            for (Nodo nodo : grafo.getNodos()) {
+                int x = (int) (nodo.getX() * scaleX);
+                int y = (int) (nodo.getY() * scaleY);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
-            if (nodo.getNombre().equals("CAFETERIA") || nodo.getNombre().equals("PORTERIA")) {
-                g2.setColor(new Color(210, 210, 210, 180));
-                g2.fillRoundRect(x - 34, y - 24, 68, 48, 15, 15);
-                g2.setColor(new Color(33, 150, 243));
-                g2.setStroke(new BasicStroke(2));
-                g2.drawRoundRect(x - 34, y - 24, 68, 48, 15, 15);
-            } else {
-                g2.setColor(new Color(66, 133, 244));
-                g2.fillOval(x - 18, y - 18, 36, 36);
+                if (nodo.getNombre().equals("CAFETERIA") || nodo.getNombre().equals("PORTERIA")) {
+                    g2.setColor(new Color(210, 210, 210, 180));
+                    g2.fillRoundRect(x - 34, y - 24, 68, 48, 15, 15);
+                    g2.setColor(new Color(33, 150, 243));
+                    g2.setStroke(new BasicStroke(2));
+                    g2.drawRoundRect(x - 34, y - 24, 68, 48, 15, 15);
+                } else {
+                    g2.setColor(new Color(66, 133, 244));
+                    g2.fillOval(x - 18, y - 18, 36, 36);
+                    g2.setColor(new Color(33, 33, 33));
+                    g2.setStroke(new BasicStroke(2));
+                    g2.drawOval(x - 18, y - 18, 36, 36);
+                }
+
+                FontMetrics fm = g2.getFontMetrics();
+                int strWidth = fm.stringWidth(nodo.getNombre());
                 g2.setColor(new Color(33, 33, 33));
-                g2.setStroke(new BasicStroke(2));
-                g2.drawOval(x - 18, y - 18, 36, 36);
+                g2.drawString(nodo.getNombre(), x - strWidth / 2, y + 5);
+
+                int peso = nodo.getPeso();
+                String pesoStr = String.valueOf(peso);
+                g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                int pesoStrWidth = g2.getFontMetrics().stringWidth(pesoStr);
+                g2.setColor(new Color(0, 0, 0, 160));
+                g2.drawString(pesoStr, x - pesoStrWidth / 2, y + 20);
             }
-
-            FontMetrics fm = g2.getFontMetrics();
-            int strWidth = fm.stringWidth(nodo.getNombre());
-            g2.setColor(new Color(33, 33, 33));
-            g2.drawString(nodo.getNombre(), x - strWidth / 2, y + 5);
-
-            int peso = nodo.getPeso(); // Ajusta según tu implementación de Nodo
-            String pesoStr = String.valueOf(peso);
-            g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            int pesoStrWidth = g2.getFontMetrics().stringWidth(pesoStr);
-            g2.setColor(new Color(0, 0, 0, 160));
-            g2.drawString(pesoStr, x - pesoStrWidth / 2, y + 20);
         }
     }
 }
+
 

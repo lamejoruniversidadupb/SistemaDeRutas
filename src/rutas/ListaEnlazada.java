@@ -129,7 +129,7 @@ public class ListaEnlazada<T> implements Iterable<T> {
             actual = actual.siguiente;
             indice++;
         }
-        return -1;
+        return -1; // Retorna -1 si no se encuentra el valor
     }
 
     public T get(int índice) {
